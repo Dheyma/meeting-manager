@@ -21,7 +21,7 @@ export default function RootLayout({
         <Toaster position="top-right" />
         <nav className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-1">
               <Image
                 src="/dheyma-logo.jpeg"
                 alt="Dheyma Logo"
