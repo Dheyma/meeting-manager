@@ -29,9 +29,14 @@ export default function RootLayout({
                 height={240}
                 className="rounded"
               />
-              <span className="text-xl font-bold text-gray-900">
-                Meeting Manager
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-gray-900">
+                  Dheyma Global Ventures Pvt. Ltd.
+                </span>
+                <span className="text-sm text-gray-500">
+                  Meeting Management System
+                </span>
+              </div>
             </Link>
             <div className="flex gap-6">
               <Link
