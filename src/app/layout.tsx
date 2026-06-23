@@ -25,8 +25,8 @@ export default function RootLayout({
               <Image
                 src="/dheyma-logo.jpeg"
                 alt="Dheyma Logo"
-                width={240}
-                height={240}
+                width={360}
+                height={360}
                 className="rounded"
               />
               <div className="flex flex-col">
