@@ -21,7 +21,7 @@ export default function RootLayout({
         <Toaster position="top-right" />
         <nav className="bg-white border-b border-gray-200 py-4">
           <div className="flex items-center justify-between px-2">
-            <Link href="/" className="flex items-center gap-1">
+            <Link href="/" className="flex items-center">
               <Image
                 src="/dheyma-logo.jpeg"
                 alt="Dheyma Logo"
@@ -29,7 +29,7 @@ export default function RootLayout({
                 height={360}
                 className="rounded"
               />
-              <div className="flex flex-col">
+              <div className="flex flex-col -ml-8">
                 <span className="text-4xl font-bold text-gray-900">
                   Dheyma Global Ventures Pvt. Ltd.
                 </span>
