@@ -47,6 +47,20 @@ export default function MeetingDetailPage({
 
   useEffect(() => {
     fetchAll();
+
+    const channel = supabase
+      .channel(`meeting-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meetings", filter: `id=eq.${id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "meeting_attendees", filter: `meeting_id=eq.${id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "agenda_items", filter: `meeting_id=eq.${id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "decisions", filter: `meeting_id=eq.${id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "action_items", filter: `meeting_id=eq.${id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "people" }, () => fetchAll())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   async function fetchAll() {

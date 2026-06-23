@@ -15,6 +15,17 @@ export default function PeoplePage() {
 
   useEffect(() => {
     fetchPeople();
+
+    const channel = supabase
+      .channel("people-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "people" }, () => {
+        fetchPeople();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchPeople() {

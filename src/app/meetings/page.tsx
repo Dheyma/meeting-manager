@@ -13,6 +13,17 @@ export default function MeetingsPage() {
 
   useEffect(() => {
     fetchMeetings();
+
+    const channel = supabase
+      .channel("meetings-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "meetings" }, () => {
+        fetchMeetings();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchMeetings() {
