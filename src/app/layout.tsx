@@ -25,8 +25,8 @@ export default function RootLayout({
               <Image
                 src="/dheyma-logo.jpeg"
                 alt="Dheyma Logo"
-                width={48}
-                height={48}
+                width={240}
+                height={240}
                 className="rounded"
               />
               <span className="text-xl font-bold text-gray-900">
