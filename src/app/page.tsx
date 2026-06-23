@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Meeting } from "@/lib/types";
 import { CalendarDays, Users, ClipboardList, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
@@ -20,6 +21,7 @@ import {
 } from "date-fns";
 
 export default function Home() {
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
 
@@ -47,7 +49,16 @@ export default function Home() {
   }
 
   function getMeetingsForDay(day: Date) {
-    return meetings.filter((m) => isSameDay(new Date(m.date), day));
+    return meetings.filter((m) => m.status !== "cancelled" && isSameDay(new Date(m.date), day));
+  }
+
+  function handleDayClick(day: Date) {
+    const dayMeetings = getMeetingsForDay(day);
+    if (dayMeetings.length === 1) {
+      router.push(`/meetings/${dayMeetings[0].id}`);
+    } else if (dayMeetings.length > 1) {
+      router.push("/meetings");
+    }
   }
 
   const monthStart = startOfMonth(currentMonth);
@@ -100,31 +111,32 @@ export default function Home() {
               const dayMeetings = getMeetingsForDay(day);
               const hasScheduled = dayMeetings.some((m) => m.status === "scheduled" || m.status === "in_progress");
               const hasCompleted = dayMeetings.some((m) => m.status === "completed");
-              const hasCancelled = dayMeetings.some((m) => m.status === "cancelled");
+              const hasMeetings = dayMeetings.length > 0;
 
               let bgColor = "";
               if (hasCompleted && hasScheduled) bgColor = "bg-gradient-to-br from-green-200 to-blue-200";
               else if (hasCompleted) bgColor = "bg-green-200";
               else if (hasScheduled) bgColor = "bg-blue-200";
-              else if (hasCancelled) bgColor = "bg-red-100";
 
               return (
                 <div
                   key={day.toISOString()}
+                  onClick={() => handleDayClick(day)}
                   className={`
-                    relative text-center py-2 text-sm rounded-lg cursor-default
+                    relative text-center py-2 text-sm rounded-lg
+                    ${hasMeetings ? "cursor-pointer hover:ring-2 hover:ring-blue-400" : "cursor-default"}
                     ${!isSameMonth(day, currentMonth) ? "text-gray-300" : "text-gray-700"}
                     ${isToday(day) ? "ring-2 ring-blue-500 font-bold" : ""}
                     ${bgColor}
                   `}
                   title={
-                    dayMeetings.length > 0
+                    hasMeetings
                       ? dayMeetings.map((m) => `${m.title} (${m.status})`).join(", ")
                       : undefined
                   }
                 >
                   {format(day, "d")}
-                  {dayMeetings.length > 0 && (
+                  {hasMeetings && (
                     <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
                       {dayMeetings.slice(0, 3).map((m) => (
                         <span
@@ -132,9 +144,7 @@ export default function Home() {
                           className={`w-1.5 h-1.5 rounded-full ${
                             m.status === "completed"
                               ? "bg-green-600"
-                              : m.status === "cancelled"
-                                ? "bg-red-500"
-                                : "bg-blue-600"
+                              : "bg-blue-600"
                           }`}
                         />
                       ))}
@@ -153,10 +163,6 @@ export default function Home() {
             <div className="flex items-center gap-1">
               <span className="w-3 h-3 rounded bg-green-200" />
               Completed
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-red-100" />
-              Cancelled
             </div>
           </div>
         </div>
