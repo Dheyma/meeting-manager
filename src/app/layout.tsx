@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Link from "next/link";
@@ -20,8 +21,17 @@ export default function RootLayout({
         <Toaster position="top-right" />
         <nav className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold text-gray-900">
-              Meeting Manager
+            <Link href="/" className="flex items-center gap-3">
+              <Image
+                src="/dheyma-logo.jpeg"
+                alt="Dheyma Logo"
+                width={48}
+                height={48}
+                className="rounded"
+              />
+              <span className="text-xl font-bold text-gray-900">
+                Meeting Manager
+              </span>
             </Link>
             <div className="flex gap-6">
               <Link
