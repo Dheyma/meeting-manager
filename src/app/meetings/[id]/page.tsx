@@ -41,6 +41,7 @@ const departments = [
   "Cannabis",
   "Wangsisina",
   "GMC capsule project",
+  "Sukti",
   "Others",
 ];
 
