@@ -222,46 +222,42 @@ export default function Home() {
               <p className="text-sm text-gray-500 mt-1">
                 {actionItems.filter((a) => a.status !== "completed").length} pending, {actionItems.filter((a) => a.status === "completed").length} completed
               </p>
-            </div>
-          </div>
-
-          {actionItems.length > 0 && (
-            <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Action Items ({actionItems.length})</h3>
-              <div className="space-y-3">
-                {actionItems.map((action, index) => (
-                  <div
-                    key={action.id}
-                    className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100"
-                    onClick={() => action.meeting && router.push(`/meetings/${action.meeting.id}`)}
-                  >
-                    <span className="text-sm font-medium text-gray-500 mt-0.5">{index + 1}.</span>
-                    {action.status === "completed" ? (
-                      <CheckCircle size={18} className="text-green-600 mt-0.5 shrink-0" />
-                    ) : (
-                      <Circle size={18} className="text-gray-400 mt-0.5 shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${action.status === "completed" ? "line-through text-gray-500" : "text-gray-900"}`}>
-                        {action.description}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                        {action.person && (
-                          <span>Assigned to: {action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}</span>
-                        )}
-                        {action.due_date && (
-                          <span>Due: {format(new Date(action.due_date), "dd/MM/yyyy")}</span>
-                        )}
-                        {action.meeting && (
-                          <span className="text-blue-600">Meeting: {action.meeting.title}</span>
-                        )}
+              {actionItems.length > 0 && (
+                <div className="space-y-2 mt-4 max-h-64 overflow-y-auto">
+                  {actionItems.map((action, index) => (
+                    <div
+                      key={action.id}
+                      className="flex items-start gap-2 p-2 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100"
+                      onClick={() => action.meeting && router.push(`/meetings/${action.meeting.id}`)}
+                    >
+                      <span className="text-xs font-medium text-gray-500 mt-0.5">{index + 1}.</span>
+                      {action.status === "completed" ? (
+                        <CheckCircle size={14} className="text-green-600 mt-0.5 shrink-0" />
+                      ) : (
+                        <Circle size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs ${action.status === "completed" ? "line-through text-gray-500" : "text-gray-900"}`}>
+                          {action.description}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-gray-500">
+                          {action.person && (
+                            <span>{action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}</span>
+                          )}
+                          {action.due_date && (
+                            <span>Due: {format(new Date(action.due_date), "dd/MM/yyyy")}</span>
+                          )}
+                          {action.meeting && (
+                            <span className="text-blue-600">{action.meeting.title}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
