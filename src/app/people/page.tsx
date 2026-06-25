@@ -301,6 +301,7 @@ export default function PeoplePage() {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Sl #</th>
               {([
                 ["name", "Name"],
                 ["designation", "Designation"],
@@ -325,8 +326,9 @@ export default function PeoplePage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sortedPeople.map((person) => (
+            {sortedPeople.map((person, index) => (
               <tr key={person.id}>
+                <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">
                   {person.name}
                 </td>
@@ -363,7 +365,7 @@ export default function PeoplePage() {
             {people.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-6 py-8 text-center text-gray-500"
                 >
                   No people added yet. Click &quot;Add Person&quot; to get started.
