@@ -12,11 +12,13 @@ export default function PeoplePage() {
   const [name, setName] = useState("");
   const [designation, setDesignation] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [organization, setOrganization] = useState("");
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesignation, setEditDesignation] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const [editOrganization, setEditOrganization] = useState("");
   const [sortField, setSortField] = useState<keyof Person>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -52,7 +54,7 @@ export default function PeoplePage() {
     e.preventDefault();
     const { error } = await supabase
       .from("people")
-      .insert({ name, designation: designation || null, email, organization: organization || null });
+      .insert({ name, designation: designation || null, email, phone: phone || null, organization: organization || null });
 
     if (error) {
       toast.error(error.message);
@@ -63,6 +65,7 @@ export default function PeoplePage() {
     setName("");
     setDesignation("");
     setEmail("");
+    setPhone("");
     setOrganization("");
     setShowForm(false);
     fetchPeople();
@@ -72,6 +75,7 @@ export default function PeoplePage() {
     setEditName(person.name);
     setEditDesignation(person.designation || "");
     setEditEmail(person.email);
+    setEditPhone(person.phone || "");
     setEditOrganization(person.organization || "");
     setEditingPerson(person);
   }
@@ -85,6 +89,7 @@ export default function PeoplePage() {
         name: editName,
         designation: editDesignation || null,
         email: editEmail,
+        phone: editPhone || null,
         organization: editOrganization || null,
       })
       .eq("id", editingPerson.id);
@@ -140,7 +145,7 @@ export default function PeoplePage() {
           onSubmit={handleSubmit}
           className="bg-white border border-gray-200 rounded-lg p-6 mb-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
@@ -184,6 +189,17 @@ export default function PeoplePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
@@ -254,6 +270,15 @@ export default function PeoplePage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
@@ -283,6 +308,7 @@ export default function PeoplePage() {
                 ["designation", "Designation"],
                 ["organization", "Department / Organisation"],
                 ["email", "Email"],
+                ["phone", "Phone Number"],
               ] as [keyof Person, string][]).map(([field, label]) => (
                 <th
                   key={field}
@@ -315,6 +341,9 @@ export default function PeoplePage() {
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {person.email}
                 </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {person.phone || "—"}
+                </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
@@ -336,7 +365,7 @@ export default function PeoplePage() {
             {people.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-6 py-8 text-center text-gray-500"
                 >
                   No people added yet. Click &quot;Add Person&quot; to get started.
