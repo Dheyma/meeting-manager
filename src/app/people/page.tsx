@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, X } from "lucide-react";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -13,6 +13,11 @@ export default function PeoplePage() {
   const [designation, setDesignation] = useState("");
   const [email, setEmail] = useState("");
   const [organization, setOrganization] = useState("");
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesignation, setEditDesignation] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editOrganization, setEditOrganization] = useState("");
 
   useEffect(() => {
     fetchPeople();
@@ -58,6 +63,35 @@ export default function PeoplePage() {
     setEmail("");
     setOrganization("");
     setShowForm(false);
+    fetchPeople();
+  }
+
+  function openEdit(person: Person) {
+    setEditName(person.name);
+    setEditDesignation(person.designation || "");
+    setEditEmail(person.email);
+    setEditOrganization(person.organization || "");
+    setEditingPerson(person);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingPerson) return;
+    const { error } = await supabase
+      .from("people")
+      .update({
+        name: editName,
+        designation: editDesignation || null,
+        email: editEmail,
+        organization: editOrganization || null,
+      })
+      .eq("id", editingPerson.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Person updated");
+    setEditingPerson(null);
     fetchPeople();
   }
 
@@ -155,6 +189,74 @@ export default function PeoplePage() {
         </form>
       )}
 
+      {editingPerson && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Edit Person</h2>
+              <button onClick={() => setEditingPerson(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+                <input
+                  type="text"
+                  value={editDesignation}
+                  onChange={(e) => setEditDesignation(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department / Organisation</label>
+                <input
+                  type="text"
+                  value={editOrganization}
+                  onChange={(e) => setEditOrganization(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingPerson(null)}
+                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -190,12 +292,20 @@ export default function PeoplePage() {
                   {person.email}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleDelete(person.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => openEdit(person)}
+                      className="text-gray-400 hover:text-blue-600"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(person.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
