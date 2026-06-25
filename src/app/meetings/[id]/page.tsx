@@ -266,8 +266,10 @@ export default function MeetingDetailPage({
     const d = new Date(meeting.date);
     const offset = d.getTimezoneOffset();
     const local = new Date(d.getTime() - offset * 60000);
-    setEditDate(local.toISOString().slice(0, 10));
-    setEditTime(local.toISOString().slice(11, 16));
+    const iso = local.toISOString();
+    const [y, m, d] = iso.slice(0, 10).split("-");
+    setEditDate(`${d}/${m}/${y}`);
+    setEditTime(iso.slice(11, 16));
     setEditLocation(meeting.location || "");
     setEditDepartment(meeting.department || "");
     setEditStatus(meeting.status);
@@ -290,7 +292,10 @@ export default function MeetingDetailPage({
       .update({
         title: editTitle,
         description: editDescription || null,
-        date: new Date(`${editDate}T${editTime || "00:00"}`).toISOString(),
+        date: (() => {
+          const [d, m, y] = editDate.split("/");
+          return new Date(`${y}-${m}-${d}T${editTime || "00:00"}`).toISOString();
+        })(),
         location: editLocation || null,
         department: editDepartment || null,
         status: editStatus,
@@ -436,19 +441,21 @@ export default function MeetingDetailPage({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
                   <input
-                    type="date"
+                    type="text"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
                     required
+                    placeholder="dd/mm/yyyy"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
                   <input
-                    type="time"
+                    type="text"
                     value={editTime}
                     onChange={(e) => setEditTime(e.target.value)}
+                    placeholder="HH:MM (e.g. 14:30)"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   />
                 </div>

@@ -45,7 +45,10 @@ export default function NewMeetingPage() {
       .insert({
         title,
         description: description || null,
-        date: new Date(`${date}T${time || "00:00"}`).toISOString(),
+        date: (() => {
+          const [d, m, y] = date.split("/");
+          return new Date(`${y}-${m}-${d}T${time || "00:00"}`).toISOString();
+        })(),
         location: location || null,
         department: department || null,
       })
@@ -118,10 +121,11 @@ export default function NewMeetingPage() {
               Date *
             </label>
             <input
-              type="date"
+              type="text"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+              placeholder="dd/mm/yyyy"
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
             />
           </div>
@@ -130,9 +134,10 @@ export default function NewMeetingPage() {
               Time
             </label>
             <input
-              type="time"
+              type="text"
               value={time}
               onChange={(e) => setTime(e.target.value)}
+              placeholder="HH:MM (e.g. 14:30)"
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
             />
           </div>
