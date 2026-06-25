@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Meeting } from "@/lib/types";
-import { CalendarDays, Users, ClipboardList, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Meeting, ActionItem, Person } from "@/lib/types";
+import { CalendarDays, Users, ClipboardList, CheckCircle, Circle, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   startOfMonth,
   endOfMonth,
@@ -24,14 +24,19 @@ export default function Home() {
   const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [actionItems, setActionItems] = useState<(ActionItem & { meeting?: Meeting })[]>([]);
 
   useEffect(() => {
     fetchMeetings();
+    fetchActionItems();
 
     const channel = supabase
-      .channel("dashboard-meetings")
+      .channel("dashboard-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "meetings" }, () => {
         fetchMeetings();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "action_items" }, () => {
+        fetchActionItems();
       })
       .subscribe();
 
@@ -39,6 +44,14 @@ export default function Home() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  async function fetchActionItems() {
+    const { data } = await supabase
+      .from("action_items")
+      .select("*, person:people(*), meeting:meetings(id, title)")
+      .order("created_at", { ascending: false });
+    setActionItems((data as unknown as (ActionItem & { meeting?: Meeting })[]) || []);
+  }
 
   async function fetchMeetings() {
     const { data } = await supabase
@@ -207,10 +220,48 @@ export default function Home() {
               <CheckCircle className="text-orange-600 mb-3" size={32} />
               <h3 className="font-semibold text-gray-900">Action Items</h3>
               <p className="text-sm text-gray-500 mt-1">
-                Track follow-ups and decisions
+                {actionItems.filter((a) => a.status !== "completed").length} pending, {actionItems.filter((a) => a.status === "completed").length} completed
               </p>
             </div>
           </div>
+
+          {actionItems.length > 0 && (
+            <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Action Items ({actionItems.length})</h3>
+              <div className="space-y-3">
+                {actionItems.map((action, index) => (
+                  <div
+                    key={action.id}
+                    className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100"
+                    onClick={() => action.meeting && router.push(`/meetings/${action.meeting.id}`)}
+                  >
+                    <span className="text-sm font-medium text-gray-500 mt-0.5">{index + 1}.</span>
+                    {action.status === "completed" ? (
+                      <CheckCircle size={18} className="text-green-600 mt-0.5 shrink-0" />
+                    ) : (
+                      <Circle size={18} className="text-gray-400 mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm ${action.status === "completed" ? "line-through text-gray-500" : "text-gray-900"}`}>
+                        {action.description}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                        {action.person && (
+                          <span>Assigned to: {action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}</span>
+                        )}
+                        {action.due_date && (
+                          <span>Due: {format(new Date(action.due_date), "dd/MM/yyyy")}</span>
+                        )}
+                        {action.meeting && (
+                          <span className="text-blue-600">Meeting: {action.meeting.title}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
