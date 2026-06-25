@@ -267,8 +267,8 @@ export default function MeetingDetailPage({
     const offset = d.getTimezoneOffset();
     const local = new Date(d.getTime() - offset * 60000);
     const iso = local.toISOString();
-    const [y, m, d] = iso.slice(0, 10).split("-");
-    setEditDate(`${d}/${m}/${y}`);
+    const [yr, mo, dy] = iso.slice(0, 10).split("-");
+    setEditDate(`${dy}/${mo}/${yr}`);
     setEditTime(iso.slice(11, 16));
     setEditLocation(meeting.location || "");
     setEditDepartment(meeting.department || "");
