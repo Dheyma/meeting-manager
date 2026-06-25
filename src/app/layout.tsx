@@ -33,7 +33,7 @@ export default function RootLayout({
                 <span className="text-4xl font-bold" style={{ color: '#B8860B' }}>
                   Dheyma Global Ventures Pvt. Ltd.
                 </span>
-                <span className="text-xl font-semibold text-black">
+                <span className="text-xl font-semibold" style={{ color: '#B8860B' }}>
                   Meeting Management System
                 </span>
               </div>
