@@ -22,6 +22,8 @@ import {
   CheckCircle,
   Circle,
   Trash2,
+  Pencil,
+  X,
 } from "lucide-react";
 
 export default function MeetingDetailPage({
@@ -44,6 +46,13 @@ export default function MeetingDetailPage({
   const [newActionAssignee, setNewActionAssignee] = useState("");
   const [newActionDueDate, setNewActionDueDate] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
+  const [editAttendees, setEditAttendees] = useState<string[]>([]);
 
   useEffect(() => {
     fetchAll();
@@ -235,6 +244,68 @@ export default function MeetingDetailPage({
     fetchAll();
   }
 
+  function openEdit() {
+    if (!meeting) return;
+    setEditTitle(meeting.title);
+    setEditDescription(meeting.description || "");
+    const d = new Date(meeting.date);
+    const offset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - offset * 60000);
+    setEditDate(local.toISOString().slice(0, 16));
+    setEditLocation(meeting.location || "");
+    setEditStatus(meeting.status);
+    setEditAttendees(attendees.map((a) => a.person_id));
+    setEditing(true);
+  }
+
+  function toggleEditAttendee(personId: string) {
+    setEditAttendees((prev) =>
+      prev.includes(personId)
+        ? prev.filter((id) => id !== personId)
+        : [...prev, personId]
+    );
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    const { error } = await supabase
+      .from("meetings")
+      .update({
+        title: editTitle,
+        description: editDescription || null,
+        date: new Date(editDate).toISOString(),
+        location: editLocation || null,
+        status: editStatus,
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const currentAttendeeIds = attendees.map((a) => a.person_id);
+    const toAdd = editAttendees.filter((pid) => !currentAttendeeIds.includes(pid));
+    const toRemove = currentAttendeeIds.filter((pid) => !editAttendees.includes(pid));
+
+    if (toRemove.length > 0) {
+      await supabase
+        .from("meeting_attendees")
+        .delete()
+        .eq("meeting_id", id)
+        .in("person_id", toRemove);
+    }
+    if (toAdd.length > 0) {
+      await supabase.from("meeting_attendees").insert(
+        toAdd.map((personId) => ({ meeting_id: id, person_id: personId }))
+      );
+    }
+
+    setEditing(false);
+    toast.success("Meeting updated");
+    fetchAll();
+  }
+
   async function deleteAgendaItem(agendaId: string) {
     await supabase.from("agenda_items").delete().eq("id", agendaId);
     fetchAll();
@@ -280,6 +351,13 @@ export default function MeetingDetailPage({
             </div>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={openEdit}
+              className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
             {meeting.status !== "completed" && (
               <button
                 onClick={() => updateStatus("completed")}
@@ -299,6 +377,114 @@ export default function MeetingDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Edit Meeting</h2>
+              <button onClick={() => setEditing(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={saveEdit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time *</label>
+                  <input
+                    type="datetime-local"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as Meeting["status"])}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="scheduled">Scheduled</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Attendees</label>
+                {people.length === 0 ? (
+                  <p className="text-sm text-gray-500">No people added yet.</p>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                    {people.map((person) => (
+                      <label
+                        key={person.id}
+                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editAttendees.includes(person.id)}
+                          onChange={() => toggleEditAttendee(person.id)}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm text-gray-900">{person.name}</span>
+                        <span className="text-xs text-gray-500">{person.email}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Attendees */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
