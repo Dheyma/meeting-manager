@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Meeting } from "@/lib/types";
 import Link from "next/link";
-import { Plus, Calendar, MapPin, Building2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Building2, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
+interface MeetingAttendeeWithPerson {
+  meeting_id: string;
+  person: { name: string } | null;
+}
+
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [attendeeMap, setAttendeeMap] = useState<Record<string, string[]>>({});
+  const [searchField, setSearchField] = useState("");
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     fetchMeetings();
@@ -27,15 +35,71 @@ export default function MeetingsPage() {
   }, []);
 
   async function fetchMeetings() {
-    const { data, error } = await supabase
-      .from("meetings")
-      .select("*")
-      .order("date", { ascending: false });
-    if (error) {
+    const [meetingsRes, attendeesRes] = await Promise.all([
+      supabase.from("meetings").select("*").order("date", { ascending: false }),
+      supabase.from("meeting_attendees").select("meeting_id, person:people(name)"),
+    ]);
+    if (meetingsRes.error) {
       toast.error("Failed to load meetings");
       return;
     }
-    setMeetings(data || []);
+    setMeetings(meetingsRes.data || []);
+
+    const map: Record<string, string[]> = {};
+    if (attendeesRes.data) {
+      for (const a of attendeesRes.data as MeetingAttendeeWithPerson[]) {
+        if (!map[a.meeting_id]) map[a.meeting_id] = [];
+        if (a.person?.name) map[a.meeting_id].push(a.person.name);
+      }
+    }
+    setAttendeeMap(map);
+  }
+
+  const searchOptions = useMemo(() => {
+    if (!searchField) return [];
+    const opts = new Set<string>();
+    for (const m of meetings) {
+      if (searchField === "date") {
+        opts.add(format(new Date(m.date), "dd/MM/yyyy"));
+      } else if (searchField === "title" && m.title) {
+        opts.add(m.title);
+      } else if (searchField === "description" && m.description) {
+        opts.add(m.description);
+      } else if (searchField === "location" && m.location) {
+        opts.add(m.location);
+      } else if (searchField === "department" && m.department) {
+        opts.add(m.department);
+      } else if (searchField === "attendees") {
+        const names = attendeeMap[m.id] || [];
+        for (const n of names) opts.add(n);
+      }
+    }
+    return Array.from(opts).sort();
+  }, [searchField, meetings, attendeeMap]);
+
+  const filteredMeetings = useMemo(() => {
+    if (!searchField || !searchValue) return meetings;
+    return meetings.filter((m) => {
+      if (searchField === "date") {
+        return format(new Date(m.date), "dd/MM/yyyy") === searchValue;
+      } else if (searchField === "title") {
+        return m.title === searchValue;
+      } else if (searchField === "description") {
+        return m.description === searchValue;
+      } else if (searchField === "location") {
+        return m.location === searchValue;
+      } else if (searchField === "department") {
+        return m.department === searchValue;
+      } else if (searchField === "attendees") {
+        return (attendeeMap[m.id] || []).includes(searchValue);
+      }
+      return true;
+    });
+  }, [searchField, searchValue, meetings, attendeeMap]);
+
+  function clearSearch() {
+    setSearchField("");
+    setSearchValue("");
   }
 
   const statusColors: Record<string, string> = {
@@ -58,8 +122,52 @@ export default function MeetingsPage() {
         </Link>
       </div>
 
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center gap-3">
+          <Search size={18} className="text-gray-400" />
+          <select
+            value={searchField}
+            onChange={(e) => { setSearchField(e.target.value); setSearchValue(""); }}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="">Search by...</option>
+            <option value="date">Date</option>
+            <option value="title">Title</option>
+            <option value="description">Description</option>
+            <option value="location">Location</option>
+            <option value="department">Department</option>
+            <option value="attendees">Attendees</option>
+          </select>
+          {searchField && (
+            <select
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">Select {searchField}...</option>
+              {searchOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+          {(searchField || searchValue) && (
+            <button
+              onClick={clearSearch}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+        {searchValue && (
+          <p className="text-xs text-gray-500 mt-2">
+            Showing {filteredMeetings.length} meeting{filteredMeetings.length !== 1 ? "s" : ""} matching {searchField}: &quot;{searchValue}&quot;
+          </p>
+        )}
+      </div>
+
       <div className="space-y-4">
-        {meetings.map((meeting) => (
+        {filteredMeetings.map((meeting) => (
           <Link
             key={meeting.id}
             href={`/meetings/${meeting.id}`}
@@ -100,9 +208,9 @@ export default function MeetingsPage() {
             </div>
           </Link>
         ))}
-        {meetings.length === 0 && (
+        {filteredMeetings.length === 0 && (
           <div className="text-center py-12 text-gray-500">
-            No meetings yet. Create your first meeting to get started.
+            {searchValue ? "No meetings match your search." : "No meetings yet. Create your first meeting to get started."}
           </div>
         )}
       </div>
