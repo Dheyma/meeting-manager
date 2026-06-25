@@ -46,6 +46,17 @@ export default function NewMeetingPage() {
       setPeople(data || []);
     }
     fetchPeople();
+
+    const channel = supabase
+      .channel("new-meeting-people")
+      .on("postgres_changes", { event: "*", schema: "public", table: "people" }, () => {
+        fetchPeople();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
