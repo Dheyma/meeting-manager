@@ -54,7 +54,7 @@ export default function PeoplePage() {
     e.preventDefault();
     const { error } = await supabase
       .from("people")
-      .insert({ name, designation: designation || null, email, phone: phone || null, organization: organization || null });
+      .insert({ name, designation: designation || null, email: email || null, phone: phone || null, organization: organization || null });
 
     if (error) {
       toast.error(error.message);
@@ -88,7 +88,7 @@ export default function PeoplePage() {
       .update({
         name: editName,
         designation: editDesignation || null,
-        email: editEmail,
+        email: editEmail || null,
         phone: editPhone || null,
         organization: editOrganization || null,
       })
@@ -182,13 +182,12 @@ export default function PeoplePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+                Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
@@ -261,12 +260,11 @@ export default function PeoplePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  required
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
               </div>
