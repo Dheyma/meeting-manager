@@ -1,6 +1,7 @@
 export interface Person {
   id: string;
   name: string;
+  designation?: string;
   email: string;
   organization?: string;
   created_at: string;

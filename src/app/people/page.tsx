@@ -10,6 +10,7 @@ export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
+  const [designation, setDesignation] = useState("");
   const [email, setEmail] = useState("");
   const [organization, setOrganization] = useState("");
 
@@ -44,7 +45,7 @@ export default function PeoplePage() {
     e.preventDefault();
     const { error } = await supabase
       .from("people")
-      .insert({ name, email, organization: organization || null });
+      .insert({ name, designation: designation || null, email, organization: organization || null });
 
     if (error) {
       toast.error(error.message);
@@ -53,6 +54,7 @@ export default function PeoplePage() {
 
     toast.success("Person added");
     setName("");
+    setDesignation("");
     setEmail("");
     setOrganization("");
     setShowForm(false);
@@ -87,7 +89,7 @@ export default function PeoplePage() {
           onSubmit={handleSubmit}
           className="bg-white border border-gray-200 rounded-lg p-6 mb-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
@@ -102,6 +104,28 @@ export default function PeoplePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Designation
+              </label>
+              <input
+                type="text"
+                value={designation}
+                onChange={(e) => setDesignation(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department / Organisation
+              </label>
+              <input
+                type="text"
+                value={organization}
+                onChange={(e) => setOrganization(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email *
               </label>
               <input
@@ -109,17 +133,6 @@ export default function PeoplePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Organization
-              </label>
-              <input
-                type="text"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
@@ -150,10 +163,13 @@ export default function PeoplePage() {
                 Name
               </th>
               <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
-                Email
+                Designation
               </th>
               <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
-                Organization
+                Department / Organisation
+              </th>
+              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
+                Email
               </th>
               <th className="px-6 py-3"></th>
             </tr>
@@ -165,10 +181,13 @@ export default function PeoplePage() {
                   {person.name}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {person.email}
+                  {person.designation || "—"}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {person.organization || "—"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {person.email}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <button
@@ -183,7 +202,7 @@ export default function PeoplePage() {
             {people.length === 0 && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-6 py-8 text-center text-gray-500"
                 >
                   No people added yet. Click &quot;Add Person&quot; to get started.
