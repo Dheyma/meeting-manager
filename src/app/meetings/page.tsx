@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Meeting } from "@/lib/types";
 import Link from "next/link";
-import { Plus, Calendar, MapPin } from "lucide-react";
+import { Plus, Calendar, MapPin, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -82,6 +82,12 @@ export default function MeetingsPage() {
                     <span className="flex items-center gap-1">
                       <MapPin size={14} />
                       {meeting.location}
+                    </span>
+                  )}
+                  {meeting.department && (
+                    <span className="flex items-center gap-1">
+                      <Building2 size={14} />
+                      {meeting.department}
                     </span>
                   )}
                 </div>

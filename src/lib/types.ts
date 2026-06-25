@@ -12,6 +12,7 @@ export interface Meeting {
   description?: string;
   date: string;
   location?: string;
+  department?: string;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
   created_at: string;
   updated_at: string;

@@ -13,7 +13,20 @@ export default function NewMeetingPage() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
+  const [department, setDepartment] = useState("");
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
+
+  const departments = [
+    "Administration",
+    "Finance",
+    "Human Resources",
+    "IT",
+    "Legal",
+    "Marketing",
+    "Operations",
+    "Sales",
+    "Board of Directors",
+  ];
 
   useEffect(() => {
     async function fetchPeople() {
@@ -33,6 +46,7 @@ export default function NewMeetingPage() {
         description: description || null,
         date: new Date(date).toISOString(),
         location: location || null,
+        department: department || null,
       })
       .select()
       .single();
@@ -122,6 +136,22 @@ export default function NewMeetingPage() {
               placeholder="e.g. Conference Room A"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Department / Organisation
+          </label>
+          <select
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value="">Select department...</option>
+            {departments.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
         </div>
 
         <div>

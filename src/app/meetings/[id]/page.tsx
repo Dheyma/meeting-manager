@@ -24,7 +24,20 @@ import {
   Trash2,
   Pencil,
   X,
+  Building2,
 } from "lucide-react";
+
+const departments = [
+  "Administration",
+  "Finance",
+  "Human Resources",
+  "IT",
+  "Legal",
+  "Marketing",
+  "Operations",
+  "Sales",
+  "Board of Directors",
+];
 
 export default function MeetingDetailPage({
   params,
@@ -52,6 +65,7 @@ export default function MeetingDetailPage({
   const [editDate, setEditDate] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
+  const [editDepartment, setEditDepartment] = useState("");
   const [editAttendees, setEditAttendees] = useState<string[]>([]);
 
   useEffect(() => {
@@ -253,6 +267,7 @@ export default function MeetingDetailPage({
     const local = new Date(d.getTime() - offset * 60000);
     setEditDate(local.toISOString().slice(0, 16));
     setEditLocation(meeting.location || "");
+    setEditDepartment(meeting.department || "");
     setEditStatus(meeting.status);
     setEditAttendees(attendees.map((a) => a.person_id));
     setEditing(true);
@@ -275,6 +290,7 @@ export default function MeetingDetailPage({
         description: editDescription || null,
         date: new Date(editDate).toISOString(),
         location: editLocation || null,
+        department: editDepartment || null,
         status: editStatus,
       })
       .eq("id", id);
@@ -346,6 +362,12 @@ export default function MeetingDetailPage({
                 <span className="flex items-center gap-1">
                   <MapPin size={14} />
                   {meeting.location}
+                </span>
+              )}
+              {meeting.department && (
+                <span className="flex items-center gap-1">
+                  <Building2 size={14} />
+                  {meeting.department}
                 </span>
               )}
             </div>
@@ -440,6 +462,19 @@ export default function MeetingDetailPage({
                   <option value="in_progress">In Progress</option>
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department / Organisation</label>
+                <select
+                  value={editDepartment}
+                  onChange={(e) => setEditDepartment(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="">Select department...</option>
+                  {departments.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
                 </select>
               </div>
               <div>
