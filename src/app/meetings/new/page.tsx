@@ -19,6 +19,7 @@ export default function NewMeetingPage() {
   const [minute, setMinute] = useState("");
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
+  const [otherDepartment, setOtherDepartment] = useState("");
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
 
   const departments = [
@@ -56,7 +57,7 @@ export default function NewMeetingPage() {
         description: description || null,
         date: buildISODate(day, month, year, hour, minute),
         location: location || null,
-        department: department || null,
+        department: department === "Others" ? (otherDepartment || "Others") : (department || null),
       })
       .select()
       .single();
@@ -154,6 +155,15 @@ export default function NewMeetingPage() {
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
+              {department === "Others" && (
+                <input
+                  type="text"
+                  value={otherDepartment}
+                  onChange={(e) => setOtherDepartment(e.target.value)}
+                  placeholder="Please specify..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-2"
+                />
+              )}
             </div>
           </div>
         </div>

@@ -76,6 +76,7 @@ export default function MeetingDetailPage({
   const [editLocation, setEditLocation] = useState("");
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
   const [editDepartment, setEditDepartment] = useState("");
+  const [editOtherDepartment, setEditOtherDepartment] = useState("");
   const [editAttendees, setEditAttendees] = useState<string[]>([]);
 
   useEffect(() => {
@@ -279,7 +280,14 @@ export default function MeetingDetailPage({
     setEditHour(parts.hour);
     setEditMinute(parts.minute);
     setEditLocation(meeting.location || "");
-    setEditDepartment(meeting.department || "");
+    const dept = meeting.department || "";
+    if (dept && !departments.includes(dept)) {
+      setEditDepartment("Others");
+      setEditOtherDepartment(dept);
+    } else {
+      setEditDepartment(dept);
+      setEditOtherDepartment("");
+    }
     setEditStatus(meeting.status);
     setEditAttendees(attendees.map((a) => a.person_id));
     setEditing(true);
@@ -302,7 +310,7 @@ export default function MeetingDetailPage({
         description: editDescription || null,
         date: buildISODate(editDay, editMonth, editYear, editHour, editMinute),
         location: editLocation || null,
-        department: editDepartment || null,
+        department: editDepartment === "Others" ? (editOtherDepartment || "Others") : (editDepartment || null),
         status: editStatus,
       })
       .eq("id", id);
@@ -481,6 +489,15 @@ export default function MeetingDetailPage({
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
+                {editDepartment === "Others" && (
+                  <input
+                    type="text"
+                    value={editOtherDepartment}
+                    onChange={(e) => setEditOtherDepartment(e.target.value)}
+                    placeholder="Please specify..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-2"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Attendees</label>
