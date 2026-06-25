@@ -5,14 +5,18 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
+import DateTimePicker, { buildISODate } from "@/components/DateTimePicker";
 
 export default function NewMeetingPage() {
   const router = useRouter();
   const [people, setPeople] = useState<Person[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [day, setDay] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
@@ -45,10 +49,7 @@ export default function NewMeetingPage() {
       .insert({
         title,
         description: description || null,
-        date: (() => {
-          const [d, m, y] = date.split("/");
-          return new Date(`${y}-${m}-${d}T${time || "00:00"}`).toISOString();
-        })(),
+        date: buildISODate(day, month, year, hour, minute),
         location: location || null,
         department: department || null,
       })
@@ -115,60 +116,41 @@ export default function NewMeetingPage() {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date *
-            </label>
-            <input
-              type="text"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              placeholder="dd/mm/yyyy"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            />
+        <div className="grid grid-cols-2 gap-6">
+          <DateTimePicker
+            day={day} month={month} year={year} hour={hour} minute={minute}
+            onDayChange={setDay} onMonthChange={setMonth} onYearChange={setYear}
+            onHourChange={setHour} onMinuteChange={setMinute}
+          />
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                placeholder="e.g. Conference Room A"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department / Organisation
+              </label>
+              <select
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="">Select department...</option>
+                {departments.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Time
-            </label>
-            <input
-              type="text"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              placeholder="HH:MM (e.g. 14:30)"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              placeholder="e.g. Conference Room A"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Department / Organisation
-          </label>
-          <select
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2"
-          >
-            <option value="">Select department...</option>
-            {departments.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
         </div>
 
         <div>

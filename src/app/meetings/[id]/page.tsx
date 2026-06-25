@@ -12,6 +12,7 @@ import {
 } from "@/lib/types";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import DateTimePicker, { buildISODate, parseDateParts } from "@/components/DateTimePicker";
 import {
   Calendar,
   MapPin,
@@ -62,8 +63,11 @@ export default function MeetingDetailPage({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editDate, setEditDate] = useState("");
-  const [editTime, setEditTime] = useState("");
+  const [editDay, setEditDay] = useState("");
+  const [editMonth, setEditMonth] = useState("");
+  const [editYear, setEditYear] = useState("");
+  const [editHour, setEditHour] = useState("");
+  const [editMinute, setEditMinute] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
   const [editDepartment, setEditDepartment] = useState("");
@@ -263,13 +267,12 @@ export default function MeetingDetailPage({
     if (!meeting) return;
     setEditTitle(meeting.title);
     setEditDescription(meeting.description || "");
-    const d = new Date(meeting.date);
-    const offset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - offset * 60000);
-    const iso = local.toISOString();
-    const [yr, mo, dy] = iso.slice(0, 10).split("-");
-    setEditDate(`${dy}/${mo}/${yr}`);
-    setEditTime(iso.slice(11, 16));
+    const parts = parseDateParts(meeting.date);
+    setEditDay(parts.day);
+    setEditMonth(parts.month);
+    setEditYear(parts.year);
+    setEditHour(parts.hour);
+    setEditMinute(parts.minute);
     setEditLocation(meeting.location || "");
     setEditDepartment(meeting.department || "");
     setEditStatus(meeting.status);
@@ -292,10 +295,7 @@ export default function MeetingDetailPage({
       .update({
         title: editTitle,
         description: editDescription || null,
-        date: (() => {
-          const [d, m, y] = editDate.split("/");
-          return new Date(`${y}-${m}-${d}T${editTime || "00:00"}`).toISOString();
-        })(),
+        date: buildISODate(editDay, editMonth, editYear, editHour, editMinute),
         location: editLocation || null,
         department: editDepartment || null,
         status: editStatus,
@@ -437,37 +437,19 @@ export default function MeetingDetailPage({
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                  <input
-                    type="text"
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    required
-                    placeholder="dd/mm/yyyy"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                  <input
-                    type="text"
-                    value={editTime}
-                    onChange={(e) => setEditTime(e.target.value)}
-                    placeholder="HH:MM (e.g. 14:30)"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    value={editLocation}
-                    onChange={(e) => setEditLocation(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </div>
+              <DateTimePicker
+                day={editDay} month={editMonth} year={editYear} hour={editHour} minute={editMinute}
+                onDayChange={setEditDay} onMonthChange={setEditMonth} onYearChange={setEditYear}
+                onHourChange={setEditHour} onMinuteChange={setEditMinute}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
