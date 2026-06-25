@@ -37,6 +37,7 @@ export default function NewMeetingPage() {
     "Wangsisina",
     "GMC capsule project",
     "Sukti",
+    "Communications",
     "Others",
   ];
 
