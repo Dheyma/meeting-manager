@@ -358,7 +358,7 @@ export default function MeetingDetailPage({
             <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
-                {format(new Date(meeting.date), "PPp")}
+                {format(new Date(meeting.date), "dd/MM/yyyy HH:mm")}
               </span>
               {meeting.location && (
                 <span className="flex items-center gap-1">
@@ -736,7 +736,7 @@ export default function MeetingDetailPage({
                     )}
                     {action.due_date && (
                       <span className="text-xs text-gray-500">
-                        Due: {format(new Date(action.due_date), "PP")}
+                        Due: {format(new Date(action.due_date), "dd/MM/yyyy")}
                       </span>
                     )}
                     {action.email_sent && (

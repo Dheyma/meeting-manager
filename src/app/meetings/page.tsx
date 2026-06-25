@@ -76,7 +76,7 @@ export default function MeetingsPage() {
                 <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <Calendar size={14} />
-                    {format(new Date(meeting.date), "PPp")}
+                    {format(new Date(meeting.date), "dd/MM/yyyy HH:mm")}
                   </span>
                   {meeting.location && (
                     <span className="flex items-center gap-1">
