@@ -25,6 +25,7 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [actionItems, setActionItems] = useState<(ActionItem & { meeting?: Meeting })[]>([]);
+  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     fetchMeetings();
@@ -216,13 +217,16 @@ export default function Home() {
               </p>
             </Link>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div
+              className="bg-white rounded-lg border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setShowActions(!showActions)}
+            >
               <CheckCircle className="text-orange-600 mb-3" size={32} />
               <h3 className="font-semibold text-gray-900">Action Items</h3>
               <p className="text-sm text-gray-500 mt-1">
                 {actionItems.filter((a) => a.status !== "completed").length} pending, {actionItems.filter((a) => a.status === "completed").length} completed
               </p>
-              {actionItems.length > 0 && (
+              {showActions && actionItems.length > 0 && (
                 <div className="space-y-2 mt-4 max-h-64 overflow-y-auto">
                   {actionItems.map((action, index) => (
                     <div
