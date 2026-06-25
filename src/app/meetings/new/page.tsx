@@ -20,6 +20,7 @@ export default function NewMeetingPage() {
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
   const [otherDepartment, setOtherDepartment] = useState("");
+  const [requestedBy, setRequestedBy] = useState("");
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
 
   const departments = [
@@ -58,6 +59,7 @@ export default function NewMeetingPage() {
         date: buildISODate(day, month, year, hour, minute),
         location: location || null,
         department: department === "Others" ? (otherDepartment || "Others") : (department || null),
+        requested_by: requestedBy || null,
       })
       .select()
       .single();
@@ -169,6 +171,24 @@ export default function NewMeetingPage() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Meeting Requested By
+          </label>
+          <select
+            value={requestedBy}
+            onChange={(e) => setRequestedBy(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value="">Select person...</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}{person.organization ? `, ${person.organization}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Attendees
           </label>
@@ -189,8 +209,9 @@ export default function NewMeetingPage() {
                     onChange={() => toggleAttendee(person.id)}
                     className="rounded border-gray-300"
                   />
-                  <span className="text-sm text-gray-900">{person.name}</span>
-                  <span className="text-xs text-gray-500">{person.email}</span>
+                  <span className="text-sm text-gray-900">
+                    {person.name}{person.organization ? `, ${person.organization}` : ""}
+                  </span>
                 </label>
               ))}
             </div>

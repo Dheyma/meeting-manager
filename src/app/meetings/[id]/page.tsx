@@ -77,6 +77,7 @@ export default function MeetingDetailPage({
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
   const [editDepartment, setEditDepartment] = useState("");
   const [editOtherDepartment, setEditOtherDepartment] = useState("");
+  const [editRequestedBy, setEditRequestedBy] = useState("");
   const [editAttendees, setEditAttendees] = useState<string[]>([]);
 
   useEffect(() => {
@@ -289,6 +290,7 @@ export default function MeetingDetailPage({
       setEditOtherDepartment("");
     }
     setEditStatus(meeting.status);
+    setEditRequestedBy(meeting.requested_by || "");
     setEditAttendees(attendees.map((a) => a.person_id));
     setEditing(true);
   }
@@ -311,6 +313,7 @@ export default function MeetingDetailPage({
         date: buildISODate(editDay, editMonth, editYear, editHour, editMinute),
         location: editLocation || null,
         department: editDepartment === "Others" ? (editOtherDepartment || "Others") : (editDepartment || null),
+        requested_by: editRequestedBy || null,
         status: editStatus,
       })
       .eq("id", id);
@@ -391,6 +394,14 @@ export default function MeetingDetailPage({
                 </span>
               )}
             </div>
+            {meeting.requested_by && (() => {
+              const requester = people.find((p) => p.id === meeting.requested_by);
+              return requester ? (
+                <p className="text-sm text-gray-500 mt-2">
+                  Requested by: <span className="font-medium text-gray-700">{requester.name}{requester.organization ? `, ${requester.organization}` : ""}</span>
+                </p>
+              ) : null;
+            })()}
           </div>
           <div className="flex gap-2">
             <button
@@ -500,6 +511,21 @@ export default function MeetingDetailPage({
                 )}
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Requested By</label>
+                <select
+                  value={editRequestedBy}
+                  onChange={(e) => setEditRequestedBy(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="">Select person...</option>
+                  {people.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.name}{person.organization ? `, ${person.organization}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Attendees</label>
                 {people.length === 0 ? (
                   <p className="text-sm text-gray-500">No people added yet.</p>
@@ -516,8 +542,9 @@ export default function MeetingDetailPage({
                           onChange={() => toggleEditAttendee(person.id)}
                           className="rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-900">{person.name}</span>
-                        <span className="text-xs text-gray-500">{person.email}</span>
+                        <span className="text-sm text-gray-900">
+                          {person.name}{person.organization ? `, ${person.organization}` : ""}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -570,10 +597,7 @@ export default function MeetingDetailPage({
                 <span
                   className={`text-sm ${attendee.attended ? "text-gray-900" : "text-gray-500"}`}
                 >
-                  {attendee.person?.name}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {attendee.person?.email}
+                  {attendee.person?.name}{attendee.person?.organization ? `, ${attendee.person.organization}` : ""}
                 </span>
               </label>
             ))}
@@ -742,7 +766,7 @@ export default function MeetingDetailPage({
                   <div className="flex items-center gap-3 mt-1">
                     {action.person && (
                       <span className="text-xs text-gray-500">
-                        Assigned to: {action.person.name}
+                        Assigned to: {action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}
                       </span>
                     )}
                     {action.due_date && (
@@ -805,7 +829,7 @@ export default function MeetingDetailPage({
               <option value="">Assign to...</option>
               {people.map((person) => (
                 <option key={person.id} value={person.id}>
-                  {person.name} ({person.email})
+                  {person.name}{person.organization ? `, ${person.organization}` : ""}
                 </option>
               ))}
             </select>
