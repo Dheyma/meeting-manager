@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-blue-50">
         <Toaster position="top-right" />
-        <nav className="bg-green-100 border-b border-green-200 pt-4 pb-0">
+        <nav className="bg-green-100 border-b border-green-200 pt-0 -mb-4 pb-0">
           <div className="flex items-center justify-between px-2">
             <Link href="/" className="flex items-center">
               <Image
