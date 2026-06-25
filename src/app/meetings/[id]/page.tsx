@@ -29,15 +29,19 @@ import {
 } from "lucide-react";
 
 const departments = [
-  "Administration",
-  "Finance",
-  "Human Resources",
-  "IT",
-  "Legal",
-  "Marketing",
-  "Operations",
-  "Sales",
-  "Board of Directors",
+  "Agriculture",
+  "Tourism",
+  "Trading",
+  "Logistics",
+  "Strategic",
+  "Dheyma Harvest",
+  "Accounts",
+  "Procurement",
+  "Agarwood",
+  "Cannabis",
+  "Wangsisina",
+  "GMC capsule project",
+  "Others",
 ];
 
 export default function MeetingDetailPage({
