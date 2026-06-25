@@ -38,7 +38,7 @@ export default function RootLayout({
                 </span>
               </div>
             </Link>
-            <div className="flex gap-6">
+            <div className="flex gap-6 mr-8">
               <Link
                 href="/"
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
