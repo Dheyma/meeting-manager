@@ -496,11 +496,12 @@ export default function MeetingDetailPage({
           <p className="text-sm text-gray-500">No attendees added.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {attendees.map((attendee) => (
+            {attendees.map((attendee, index) => (
               <label
                 key={attendee.id}
                 className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
               >
+                <span className="text-sm font-medium text-gray-500 w-6">{index + 1}.</span>
                 <input
                   type="checkbox"
                   checked={attendee.attended}
@@ -610,14 +611,17 @@ export default function MeetingDetailPage({
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Decisions</h2>
 
         <div className="space-y-2 mb-4">
-          {decisions.map((decision) => (
+          {decisions.map((decision, index) => (
             <div
               key={decision.id}
               className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
             >
-              <span className="text-sm text-gray-900">
-                {decision.description}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
+                <span className="text-sm text-gray-900">
+                  {decision.description}
+                </span>
+              </div>
               <button
                 onClick={() => deleteDecision(decision.id)}
                 className="text-gray-400 hover:text-red-600"
@@ -656,12 +660,13 @@ export default function MeetingDetailPage({
         </h2>
 
         <div className="space-y-3 mb-4">
-          {actionItems.map((action) => (
+          {actionItems.map((action, index) => (
             <div
               key={action.id}
               className="flex items-center justify-between p-3 bg-orange-50 rounded-lg"
             >
               <div className="flex items-center gap-3 flex-1">
+                <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
                 <button
                   onClick={() => toggleActionStatus(action.id, action.status)}
                 >
