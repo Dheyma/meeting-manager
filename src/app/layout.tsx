@@ -30,10 +30,10 @@ export default function RootLayout({
                 className="rounded"
               />
               <div className="flex flex-col -ml-8">
-                <span className="text-4xl font-bold text-gray-900">
+                <span className="text-4xl font-bold" style={{ color: '#B8860B' }}>
                   Dheyma Global Ventures Pvt. Ltd.
                 </span>
-                <span className="text-xl text-gray-500">
+                <span className="text-xl font-semibold text-black">
                   Meeting Management System
                 </span>
               </div>
