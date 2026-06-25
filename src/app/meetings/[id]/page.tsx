@@ -63,6 +63,7 @@ export default function MeetingDetailPage({
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
   const [editDepartment, setEditDepartment] = useState("");
@@ -265,7 +266,8 @@ export default function MeetingDetailPage({
     const d = new Date(meeting.date);
     const offset = d.getTimezoneOffset();
     const local = new Date(d.getTime() - offset * 60000);
-    setEditDate(local.toISOString().slice(0, 16));
+    setEditDate(local.toISOString().slice(0, 10));
+    setEditTime(local.toISOString().slice(11, 16));
     setEditLocation(meeting.location || "");
     setEditDepartment(meeting.department || "");
     setEditStatus(meeting.status);
@@ -288,7 +290,7 @@ export default function MeetingDetailPage({
       .update({
         title: editTitle,
         description: editDescription || null,
-        date: new Date(editDate).toISOString(),
+        date: new Date(`${editDate}T${editTime || "00:00"}`).toISOString(),
         location: editLocation || null,
         department: editDepartment || null,
         status: editStatus,
@@ -430,14 +432,23 @@ export default function MeetingDetailPage({
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
                     required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   />
                 </div>

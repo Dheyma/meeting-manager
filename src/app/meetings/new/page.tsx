@@ -12,6 +12,7 @@ export default function NewMeetingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
@@ -44,7 +45,7 @@ export default function NewMeetingPage() {
       .insert({
         title,
         description: description || null,
-        date: new Date(date).toISOString(),
+        date: new Date(`${date}T${time || "00:00"}`).toISOString(),
         location: location || null,
         department: department || null,
       })
@@ -111,16 +112,27 @@ export default function NewMeetingPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date & Time *
+              Date *
             </label>
             <input
-              type="datetime-local"
+              type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Time
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
             />
           </div>
