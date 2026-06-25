@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
-import { Plus, Trash2, Pencil, X } from "lucide-react";
+import { Plus, Trash2, Pencil, X, ArrowUp, ArrowDown } from "lucide-react";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -18,6 +18,8 @@ export default function PeoplePage() {
   const [editDesignation, setEditDesignation] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editOrganization, setEditOrganization] = useState("");
+  const [sortField, setSortField] = useState<keyof Person>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     fetchPeople();
@@ -94,6 +96,21 @@ export default function PeoplePage() {
     setEditingPerson(null);
     fetchPeople();
   }
+
+  function toggleSort(field: keyof Person) {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  }
+
+  const sortedPeople = [...people].sort((a, b) => {
+    const aVal = (a[sortField] || "").toString().toLowerCase();
+    const bVal = (b[sortField] || "").toString().toLowerCase();
+    return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+  });
 
   async function handleDelete(id: string) {
     const { error } = await supabase.from("people").delete().eq("id", id);
@@ -261,23 +278,30 @@ export default function PeoplePage() {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
-                Name
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
-                Designation
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
-                Department / Organisation
-              </th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">
-                Email
-              </th>
+              {([
+                ["name", "Name"],
+                ["designation", "Designation"],
+                ["organization", "Department / Organisation"],
+                ["email", "Email"],
+              ] as [keyof Person, string][]).map(([field, label]) => (
+                <th
+                  key={field}
+                  onClick={() => toggleSort(field)}
+                  className="text-left px-6 py-3 text-sm font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    {label}
+                    {sortField === field && (
+                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                    )}
+                  </div>
+                </th>
+              ))}
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {people.map((person) => (
+            {sortedPeople.map((person) => (
               <tr key={person.id}>
                 <td className="px-6 py-4 text-sm text-gray-900">
                   {person.name}
