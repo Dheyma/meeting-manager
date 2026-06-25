@@ -582,25 +582,15 @@ export default function MeetingDetailPage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {attendees.map((attendee, index) => (
-              <label
+              <div
                 key={attendee.id}
-                className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                className="flex items-center gap-3 p-2 rounded"
               >
                 <span className="text-sm font-medium text-gray-500 w-6">{index + 1}.</span>
-                <input
-                  type="checkbox"
-                  checked={attendee.attended}
-                  onChange={() =>
-                    toggleAttendance(attendee.id, attendee.attended)
-                  }
-                  className="rounded border-gray-300"
-                />
-                <span
-                  className={`text-sm ${attendee.attended ? "text-gray-900" : "text-gray-500"}`}
-                >
+                <span className="text-sm text-gray-900">
                   {attendee.person?.name}{attendee.person?.organization ? `, ${attendee.person.organization}` : ""}
                 </span>
-              </label>
+              </div>
             ))}
           </div>
         )}
