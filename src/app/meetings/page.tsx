@@ -47,7 +47,7 @@ export default function MeetingsPage() {
 
     const map: Record<string, string[]> = {};
     if (attendeesRes.data) {
-      for (const a of attendeesRes.data as MeetingAttendeeWithPerson[]) {
+      for (const a of attendeesRes.data as unknown as MeetingAttendeeWithPerson[]) {
         if (!map[a.meeting_id]) map[a.meeting_id] = [];
         if (a.person?.name) map[a.meeting_id].push(a.person.name);
       }
