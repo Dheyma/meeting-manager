@@ -50,6 +50,7 @@ export default function Home() {
     const { data } = await supabase
       .from("action_items")
       .select("*, person:people(*), meeting:meetings(id, title)")
+      .neq("status", "completed")
       .order("created_at", { ascending: false });
     setActionItems((data as unknown as (ActionItem & { meeting?: Meeting })[]) || []);
   }
@@ -224,7 +225,7 @@ export default function Home() {
               <CheckCircle className="text-orange-600 mb-3" size={32} />
               <h3 className="font-semibold text-gray-900">Action Items</h3>
               <p className="text-sm text-gray-500 mt-1">
-                {actionItems.filter((a) => a.status !== "completed").length} pending, {actionItems.filter((a) => a.status === "completed").length} completed
+                {actionItems.length} pending
               </p>
               {showActions && actionItems.length > 0 && (
                 <div className="space-y-2 mt-4 max-h-64 overflow-y-auto">
