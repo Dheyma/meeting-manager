@@ -51,10 +51,11 @@ export function useDepartments() {
     return false;
   }
 
-  // Base list without "Others", then custom ones, then "Others" at end
+  // All departments alphabetically, "Others" pinned at the end
   const allDepartments = [
-    ...BASE_DEPARTMENTS.filter((d) => d !== "Others"),
-    ...customDepts,
+    ...[...BASE_DEPARTMENTS.filter((d) => d !== "Others"), ...customDepts].sort((a, b) =>
+      a.localeCompare(b)
+    ),
     "Others",
   ];
 
