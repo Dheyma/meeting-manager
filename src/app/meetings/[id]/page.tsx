@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import DateTimePicker, { buildISODate, parseDateParts } from "@/components/DateTimePicker";
+import { useDepartments } from "@/hooks/useDepartments";
 import {
   Calendar,
   MapPin,
@@ -27,27 +28,6 @@ import {
   X,
   Building2,
 } from "lucide-react";
-
-const departments = [
-  "Agriculture",
-  "Tourism",
-  "Trading",
-  "Logistics",
-  "Strategic",
-  "Dheyma Harvest",
-  "Accounts",
-  "Procurement",
-  "Agarwood",
-  "Cannabis",
-  "Wangsisina",
-  "GMC capsule project",
-  "Sukti",
-  "Communications",
-  "Construction",
-  "Asanga",
-  "Human Resource",
-  "Others",
-];
 
 export default function MeetingDetailPage({
   params,
@@ -81,6 +61,8 @@ export default function MeetingDetailPage({
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
   const [editDepartment, setEditDepartment] = useState("");
   const [editOtherDepartment, setEditOtherDepartment] = useState("");
+  const [editNewDeptName, setEditNewDeptName] = useState("");
+  const { allDepartments, addDepartment } = useDepartments();
   const [editRequestedBy, setEditRequestedBy] = useState("");
   const [editAttendees, setEditAttendees] = useState<string[]>([]);
 
@@ -286,7 +268,7 @@ export default function MeetingDetailPage({
     setEditMinute(parts.minute);
     setEditLocation(meeting.location || "");
     const dept = meeting.department || "";
-    if (dept && !departments.includes(dept)) {
+    if (dept && !allDepartments.includes(dept)) {
       setEditDepartment("Others");
       setEditOtherDepartment(dept);
     } else {
@@ -316,7 +298,9 @@ export default function MeetingDetailPage({
         description: editDescription || null,
         date: buildISODate(editDay, editMonth, editYear, editHour, editMinute),
         location: editLocation || null,
-        department: editDepartment === "Others" ? (editOtherDepartment || "Others") : (editDepartment || null),
+        department: editDepartment === "Others" ? (editOtherDepartment || "Others") :
+                   editDepartment === "__add_new__" ? (editNewDeptName.trim() || null) :
+                   (editDepartment || null),
         requested_by: editRequestedBy || null,
         status: editStatus,
       })
@@ -496,13 +480,14 @@ export default function MeetingDetailPage({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department / Organisation</label>
                 <select
                   value={editDepartment}
-                  onChange={(e) => setEditDepartment(e.target.value)}
+                  onChange={(e) => { setEditDepartment(e.target.value); setEditNewDeptName(""); }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
                   <option value="">Select department...</option>
-                  {departments.map((d) => (
+                  {allDepartments.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
+                  <option value="__add_new__">+ Add new Department</option>
                 </select>
                 {editDepartment === "Others" && (
                   <input
@@ -512,6 +497,34 @@ export default function MeetingDetailPage({
                     placeholder="Please specify..."
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-2"
                   />
+                )}
+                {editDepartment === "__add_new__" && (
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      value={editNewDeptName}
+                      onChange={(e) => setEditNewDeptName(e.target.value)}
+                      placeholder="Enter new department name..."
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const ok = await addDepartment(editNewDeptName);
+                        if (ok) {
+                          setEditDepartment(editNewDeptName.trim());
+                          setEditNewDeptName("");
+                          toast.success("Department added");
+                        } else {
+                          toast.error("Could not save department");
+                        }
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm shrink-0"
+                    >
+                      Add
+                    </button>
+                  </div>
                 )}
               </div>
               <div>

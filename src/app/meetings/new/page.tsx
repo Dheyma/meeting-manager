@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import DateTimePicker, { buildISODate } from "@/components/DateTimePicker";
+import { useDepartments } from "@/hooks/useDepartments";
 
 export default function NewMeetingPage() {
   const router = useRouter();
@@ -20,29 +21,10 @@ export default function NewMeetingPage() {
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
   const [otherDepartment, setOtherDepartment] = useState("");
+  const [newDeptName, setNewDeptName] = useState("");
+  const { allDepartments, addDepartment } = useDepartments();
   const [requestedBy, setRequestedBy] = useState("");
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
-
-  const departments = [
-    "Agriculture",
-    "Tourism",
-    "Trading",
-    "Logistics",
-    "Strategic",
-    "Dheyma Harvest",
-    "Accounts",
-    "Procurement",
-    "Agarwood",
-    "Cannabis",
-    "Wangsisina",
-    "GMC capsule project",
-    "Sukti",
-    "Communications",
-    "Construction",
-    "Asanga",
-    "Human Resource",
-    "Others",
-  ];
 
   useEffect(() => {
     async function fetchPeople() {
@@ -73,7 +55,9 @@ export default function NewMeetingPage() {
         description: description || null,
         date: buildISODate(day, month, year, hour, minute),
         location: location || null,
-        department: department === "Others" ? (otherDepartment || "Others") : (department || null),
+        department: department === "Others" ? (otherDepartment || "Others") :
+                   department === "__add_new__" ? (newDeptName.trim() || null) :
+                   (department || null),
         requested_by: requestedBy || null,
       })
       .select()
@@ -164,13 +148,14 @@ export default function NewMeetingPage() {
               </label>
               <select
                 value={department}
-                onChange={(e) => setDepartment(e.target.value)}
+                onChange={(e) => { setDepartment(e.target.value); setNewDeptName(""); }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
                 <option value="">Select department...</option>
-                {departments.map((d) => (
+                {allDepartments.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
+                <option value="__add_new__">+ Add new Department</option>
               </select>
               {department === "Others" && (
                 <input
@@ -180,6 +165,34 @@ export default function NewMeetingPage() {
                   placeholder="Please specify..."
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-2"
                 />
+              )}
+              {department === "__add_new__" && (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={newDeptName}
+                    onChange={(e) => setNewDeptName(e.target.value)}
+                    placeholder="Enter new department name..."
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ok = await addDepartment(newDeptName);
+                      if (ok) {
+                        setDepartment(newDeptName.trim());
+                        setNewDeptName("");
+                        toast.success("Department added");
+                      } else {
+                        toast.error("Could not save department");
+                      }
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm shrink-0"
+                  >
+                    Add
+                  </button>
+                </div>
               )}
             </div>
           </div>
