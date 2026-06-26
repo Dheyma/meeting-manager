@@ -38,6 +38,9 @@ export default function NewMeetingPage() {
     "GMC capsule project",
     "Sukti",
     "Communications",
+    "Construction",
+    "Asanga",
+    "Human Resource",
     "Others",
   ];
 
