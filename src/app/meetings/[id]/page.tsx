@@ -794,15 +794,6 @@ export default function MeetingDetailPage({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <label className="cursor-pointer text-gray-400 hover:text-blue-600">
-                  <Upload size={16} />
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e, item.id)}
-                    disabled={uploading}
-                  />
-                </label>
                 <button
                   onClick={() => deleteAgendaItem(item.id)}
                   className="text-gray-400 hover:text-red-600"
