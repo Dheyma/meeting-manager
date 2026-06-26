@@ -218,6 +218,46 @@ export default function MeetingDetailPage({
     fetchAll();
   }
 
+  async function handleAgendaDocUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Upload failed");
+        return;
+      }
+
+      await supabase
+        .from("meetings")
+        .update({ agenda_document_url: data.url, agenda_document_name: data.name })
+        .eq("id", id);
+
+      toast.success("Agenda document uploaded");
+      fetchAll();
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeAgendaDoc() {
+    await supabase
+      .from("meetings")
+      .update({ agenda_document_url: null, agenda_document_name: null })
+      .eq("id", id);
+    toast.success("Agenda document removed");
+    fetchAll();
+  }
+
   async function addDecision(e: React.FormEvent) {
     e.preventDefault();
     const { error } = await supabase.from("decisions").insert({
@@ -690,6 +730,36 @@ export default function MeetingDetailPage({
       {/* Agenda */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Agenda</h2>
+
+        <div className="mb-4">
+          {meeting.agenda_document_url ? (
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <FileText size={18} className="text-blue-600 shrink-0" />
+              <a
+                href={meeting.agenda_document_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline flex-1 truncate"
+              >
+                {meeting.agenda_document_name || "Agenda Document"}
+              </a>
+              <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-1">
+                <Upload size={13} />
+                Replace
+                <input type="file" className="hidden" onChange={handleAgendaDocUpload} disabled={uploading} />
+              </label>
+              <button onClick={removeAgendaDoc} className="text-gray-400 hover:text-red-600" title="Remove">
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ) : (
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit">
+              <Upload size={16} />
+              Upload agenda document
+              <input type="file" className="hidden" onChange={handleAgendaDocUpload} disabled={uploading} />
+            </label>
+          )}
+        </div>
 
         <div className="space-y-3 mb-4">
           {agendaItems.map((item, index) => (
