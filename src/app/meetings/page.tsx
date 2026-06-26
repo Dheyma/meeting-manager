@@ -16,6 +16,9 @@ interface MeetingAttendeeWithPerson {
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [attendeeMap, setAttendeeMap] = useState<Record<string, string[]>>({});
+  const [agendaMap, setAgendaMap] = useState<Record<string, string>>({});
+  const [decisionMap, setDecisionMap] = useState<Record<string, string>>({});
+  const [actionMap, setActionMap] = useState<Record<string, string>>({});
   const [searchField, setSearchField] = useState("");
   const [searchValue, setSearchValue] = useState("");
 
@@ -35,9 +38,12 @@ export default function MeetingsPage() {
   }, []);
 
   async function fetchMeetings() {
-    const [meetingsRes, attendeesRes] = await Promise.all([
+    const [meetingsRes, attendeesRes, agendaRes, decisionsRes, actionsRes] = await Promise.all([
       supabase.from("meetings").select("*").order("date", { ascending: false }),
       supabase.from("meeting_attendees").select("meeting_id, person:people(name)"),
+      supabase.from("agenda_items").select("meeting_id, title, description"),
+      supabase.from("decisions").select("meeting_id, description"),
+      supabase.from("action_items").select("meeting_id, description"),
     ]);
     if (meetingsRes.error) {
       toast.error("Failed to load meetings");
@@ -53,6 +59,24 @@ export default function MeetingsPage() {
       }
     }
     setAttendeeMap(map);
+
+    const aMap: Record<string, string> = {};
+    for (const r of (agendaRes.data || []) as { meeting_id: string; title: string; description?: string }[]) {
+      aMap[r.meeting_id] = (aMap[r.meeting_id] || "") + " " + (r.title || "") + " " + (r.description || "");
+    }
+    setAgendaMap(aMap);
+
+    const dMap: Record<string, string> = {};
+    for (const r of (decisionsRes.data || []) as { meeting_id: string; description: string }[]) {
+      dMap[r.meeting_id] = (dMap[r.meeting_id] || "") + " " + r.description;
+    }
+    setDecisionMap(dMap);
+
+    const acMap: Record<string, string> = {};
+    for (const r of (actionsRes.data || []) as { meeting_id: string; description: string }[]) {
+      acMap[r.meeting_id] = (acMap[r.meeting_id] || "") + " " + r.description;
+    }
+    setActionMap(acMap);
   }
 
   const searchOptions = useMemo(() => {
@@ -100,12 +124,15 @@ export default function MeetingsPage() {
           m.description?.toLowerCase().includes(kw) ||
           m.location?.toLowerCase().includes(kw) ||
           m.department?.toLowerCase().includes(kw) ||
-          attendeeNames.includes(kw)
+          attendeeNames.includes(kw) ||
+          (agendaMap[m.id] || "").toLowerCase().includes(kw) ||
+          (decisionMap[m.id] || "").toLowerCase().includes(kw) ||
+          (actionMap[m.id] || "").toLowerCase().includes(kw)
         );
       }
       return true;
     });
-  }, [searchField, searchValue, meetings, attendeeMap]);
+  }, [searchField, searchValue, meetings, attendeeMap, agendaMap, decisionMap, actionMap]);
 
   function clearSearch() {
     setSearchField("");
