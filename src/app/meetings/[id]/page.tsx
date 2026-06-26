@@ -574,8 +574,7 @@ export default function MeetingDetailPage({
       {/* Attendees */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Attendees ({attendees.filter((a) => a.attended).length}/
-          {attendees.length})
+          Attendees
         </h2>
         {attendees.length === 0 ? (
           <p className="text-sm text-gray-500">No attendees added.</p>
