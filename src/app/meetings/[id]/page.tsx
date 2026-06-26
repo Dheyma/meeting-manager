@@ -178,6 +178,46 @@ export default function MeetingDetailPage({
     }
   }
 
+  async function handleBackgroundDocUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Upload failed");
+        return;
+      }
+
+      await supabase
+        .from("meetings")
+        .update({ background_document_url: data.url, background_document_name: data.name })
+        .eq("id", id);
+
+      toast.success("Background document uploaded");
+      fetchAll();
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeBackgroundDoc() {
+    await supabase
+      .from("meetings")
+      .update({ background_document_url: null, background_document_name: null })
+      .eq("id", id);
+    toast.success("Background document removed");
+    fetchAll();
+  }
+
   async function addDecision(e: React.FormEvent) {
     e.preventDefault();
     const { error } = await supabase.from("decisions").insert({
@@ -608,6 +648,42 @@ export default function MeetingDetailPage({
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Background Document */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Background Document</h2>
+        {meeting.background_document_url ? (
+          <div className="flex items-center gap-3">
+            <FileText size={18} className="text-blue-600 shrink-0" />
+            <a
+              href={meeting.background_document_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline flex-1 truncate"
+            >
+              {meeting.background_document_name || "Background Document"}
+            </a>
+            <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-1">
+              <Upload size={13} />
+              Replace
+              <input type="file" className="hidden" onChange={handleBackgroundDocUpload} disabled={uploading} />
+            </label>
+            <button
+              onClick={removeBackgroundDoc}
+              className="text-gray-400 hover:text-red-600"
+              title="Remove document"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ) : (
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit">
+            <Upload size={16} />
+            Upload background document
+            <input type="file" className="hidden" onChange={handleBackgroundDocUpload} disabled={uploading} />
+          </label>
         )}
       </div>
 

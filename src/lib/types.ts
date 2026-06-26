@@ -17,6 +17,8 @@ export interface Meeting {
   department?: string;
   requested_by?: string;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  background_document_url?: string;
+  background_document_name?: string;
   created_at: string;
   updated_at: string;
 }
