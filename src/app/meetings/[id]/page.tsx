@@ -726,7 +726,7 @@ export default function MeetingDetailPage({
       </div>
 
       {/* Action Items */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 pb-72">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Action Items
         </h2>
@@ -824,12 +824,15 @@ export default function MeetingDetailPage({
                 </option>
               ))}
             </select>
-            <input
-              type="date"
-              value={newActionDueDate}
-              onChange={(e) => setNewActionDueDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            />
+            <label className="flex items-center gap-2 shrink-0">
+              <span className="text-sm text-gray-600 whitespace-nowrap">To be completed by</span>
+              <input
+                type="date"
+                value={newActionDueDate}
+                onChange={(e) => setNewActionDueDate(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </label>
             <button
               type="submit"
               className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"
