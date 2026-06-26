@@ -92,6 +92,16 @@ export default function MeetingsPage() {
         return m.department === searchValue;
       } else if (searchField === "attendees") {
         return (attendeeMap[m.id] || []).includes(searchValue);
+      } else if (searchField === "keyword") {
+        const kw = searchValue.toLowerCase();
+        const attendeeNames = (attendeeMap[m.id] || []).join(" ").toLowerCase();
+        return (
+          m.title?.toLowerCase().includes(kw) ||
+          m.description?.toLowerCase().includes(kw) ||
+          m.location?.toLowerCase().includes(kw) ||
+          m.department?.toLowerCase().includes(kw) ||
+          attendeeNames.includes(kw)
+        );
       }
       return true;
     });
@@ -131,6 +141,7 @@ export default function MeetingsPage() {
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
           >
             <option value="">Search by...</option>
+            <option value="keyword">Keyword</option>
             <option value="date">Date</option>
             <option value="title">Title</option>
             <option value="description">Description</option>
@@ -138,7 +149,16 @@ export default function MeetingsPage() {
             <option value="department">Department</option>
             <option value="attendees">Attendees</option>
           </select>
-          {searchField && (
+          {searchField === "keyword" ? (
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Type a keyword to search..."
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              autoFocus
+            />
+          ) : searchField && (
             <select
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
