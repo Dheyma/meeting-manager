@@ -147,7 +147,6 @@ export default function PeoplePage() {
 
   return (
     <div>
-      <p className="text-sm text-gray-500 italic mb-4">(Default password is 1234 until user changes it to a custom one)</p>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">People</h1>
         <button
@@ -265,6 +264,7 @@ export default function PeoplePage() {
         </div>
       )}
 
+      <p className="text-sm text-gray-500 italic mb-3">(Default password is 1234 until user changes it to a custom one)</p>
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
