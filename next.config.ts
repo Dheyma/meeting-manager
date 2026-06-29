@@ -4,9 +4,7 @@ const nextConfig: NextConfig = {
   basePath: "/MMS",
   async redirects() {
     return [
-      // /MMS → /MMS/login  (server-side, instant)
-      { source: "/", destination: "/login", permanent: false },
-      // bare / → /MMS/login
+      // bare / (no basePath) → /MMS/login
       { source: "/", destination: "/MMS/login", basePath: false, permanent: false },
     ];
   },
