@@ -148,7 +148,7 @@ export default function MeetingDetailPage({
 
   async function updateStatus(status: Meeting["status"]) {
     await supabase.from("meetings").update({ status }).eq("id", id);
-    await logAction(`Changed meeting status to "${status.replace("_", " ")}"`, "meeting", meeting?.title);
+    await logAction(`Changed meeting status to "${status.replace("_", " ")}"`, "meeting", `Meeting: "${meeting?.title}"`);
     fetchAll();
     toast.success(`Meeting marked as ${status.replace("_", " ")}`);
   }
@@ -344,7 +344,7 @@ export default function MeetingDetailPage({
       toast.error(error.message);
       return;
     }
-    await logAction("Added decision", "decision", `meeting: ${meeting?.title}`);
+    await logAction("Added decision", "decision", `"${newDecision.slice(0, 80)}" in meeting: "${meeting?.title}"`);
     setNewDecision("");
     fetchAll();
   }
@@ -489,7 +489,7 @@ export default function MeetingDetailPage({
     }
 
     setEditing(false);
-    await logAction("Updated meeting details", "meeting", editTitle);
+    await logAction("Updated meeting details", "meeting", `Meeting: "${editTitle}"`);
     toast.success("Meeting updated");
     fetchAll();
   }
@@ -539,7 +539,7 @@ export default function MeetingDetailPage({
       .update({ description: editingDecisionText.trim() })
       .eq("id", decisionId);
     if (error) { toast.error(error.message); return; }
-    await logAction("Updated decision", "decision", `meeting: ${meeting?.title}`);
+    await logAction("Updated decision", "decision", `"${editingDecisionText.slice(0, 80)}" in meeting: "${meeting?.title}"`);
     setEditingDecisionId(null);
     toast.success("Decision updated");
     fetchAll();
@@ -586,7 +586,7 @@ export default function MeetingDetailPage({
       })
       .eq("id", actionId);
     if (error) { toast.error(error.message); return; }
-    await logAction("Updated action item", "action_item", `meeting: ${meeting?.title}`);
+    await logAction("Updated action item", "action_item", `"${editingActionDescription.slice(0, 80)}" in meeting: "${meeting?.title}"`);
     setEditingActionId(null);
     toast.success("Action item updated");
     fetchAll();
