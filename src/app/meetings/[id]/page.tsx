@@ -48,6 +48,18 @@ export default function MeetingDetailPage({
   const [newActionDescription, setNewActionDescription] = useState("");
   const [newActionAssignee, setNewActionAssignee] = useState("");
   const [newActionDueDate, setNewActionDueDate] = useState("");
+
+  const [editingAgendaId, setEditingAgendaId] = useState<string | null>(null);
+  const [editingAgendaTitle, setEditingAgendaTitle] = useState("");
+  const [editingAgendaDescription, setEditingAgendaDescription] = useState("");
+
+  const [editingDecisionId, setEditingDecisionId] = useState<string | null>(null);
+  const [editingDecisionText, setEditingDecisionText] = useState("");
+
+  const [editingActionId, setEditingActionId] = useState<string | null>(null);
+  const [editingActionDescription, setEditingActionDescription] = useState("");
+  const [editingActionAssignee, setEditingActionAssignee] = useState("");
+  const [editingActionDueDate, setEditingActionDueDate] = useState("");
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -418,13 +430,71 @@ export default function MeetingDetailPage({
     fetchAll();
   }
 
+  function startEditAgenda(item: AgendaItem) {
+    setEditingAgendaId(item.id);
+    setEditingAgendaTitle(item.title);
+    setEditingAgendaDescription(item.description || "");
+  }
+
+  async function saveEditAgenda(agendaId: string) {
+    if (!editingAgendaTitle.trim()) return;
+    const { error } = await supabase
+      .from("agenda_items")
+      .update({ title: editingAgendaTitle.trim(), description: editingAgendaDescription.trim() || null })
+      .eq("id", agendaId);
+    if (error) { toast.error(error.message); return; }
+    setEditingAgendaId(null);
+    toast.success("Agenda item updated");
+    fetchAll();
+  }
+
   async function deleteDecision(decisionId: string) {
     await supabase.from("decisions").delete().eq("id", decisionId);
     fetchAll();
   }
 
+  function startEditDecision(decision: Decision) {
+    setEditingDecisionId(decision.id);
+    setEditingDecisionText(decision.description);
+  }
+
+  async function saveEditDecision(decisionId: string) {
+    if (!editingDecisionText.trim()) return;
+    const { error } = await supabase
+      .from("decisions")
+      .update({ description: editingDecisionText.trim() })
+      .eq("id", decisionId);
+    if (error) { toast.error(error.message); return; }
+    setEditingDecisionId(null);
+    toast.success("Decision updated");
+    fetchAll();
+  }
+
   async function deleteActionItem(actionId: string) {
     await supabase.from("action_items").delete().eq("id", actionId);
+    fetchAll();
+  }
+
+  function startEditAction(action: ActionItem) {
+    setEditingActionId(action.id);
+    setEditingActionDescription(action.description);
+    setEditingActionAssignee(action.assigned_to || "");
+    setEditingActionDueDate(action.due_date || "");
+  }
+
+  async function saveEditAction(actionId: string) {
+    if (!editingActionDescription.trim()) return;
+    const { error } = await supabase
+      .from("action_items")
+      .update({
+        description: editingActionDescription.trim(),
+        assigned_to: editingActionAssignee || null,
+        due_date: editingActionDueDate || null,
+      })
+      .eq("id", actionId);
+    if (error) { toast.error(error.message); return; }
+    setEditingActionId(null);
+    toast.success("Action item updated");
     fetchAll();
   }
 
@@ -765,42 +835,77 @@ export default function MeetingDetailPage({
           {agendaItems.map((item, index) => (
             <div
               key={item.id}
-              className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
+              className="p-3 bg-gray-50 rounded-lg"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-500">
-                    {index + 1}.
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {item.title}
-                  </span>
+              {editingAgendaId === item.id ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editingAgendaTitle}
+                    onChange={(e) => setEditingAgendaTitle(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium"
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    value={editingAgendaDescription}
+                    onChange={(e) => setEditingAgendaDescription(e.target.value)}
+                    placeholder="Description (optional)"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEditAgenda(item.id)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingAgendaId(null)}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                {item.description && (
-                  <p className="text-sm text-gray-600 mt-1 ml-6">
-                    {item.description}
-                  </p>
-                )}
-                {item.document_url && (
-                  <a
-                    href={item.document_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1 ml-6"
-                  >
-                    <FileText size={14} />
-                    {item.document_name}
-                  </a>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => deleteAgendaItem(item.id)}
-                  className="text-gray-400 hover:text-red-600"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
+                      <span className="text-sm font-medium text-gray-900">{item.title}</span>
+                    </div>
+                    {item.description && (
+                      <p className="text-sm text-gray-600 mt-1 ml-6">{item.description}</p>
+                    )}
+                    {item.document_url && (
+                      <a
+                        href={item.document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1 ml-6"
+                      >
+                        <FileText size={14} />
+                        {item.document_name}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => startEditAgenda(item)}
+                      className="text-gray-400 hover:text-blue-600"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => deleteAgendaItem(item.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -838,20 +943,54 @@ export default function MeetingDetailPage({
           {decisions.map((decision, index) => (
             <div
               key={decision.id}
-              className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
+              className="p-3 bg-green-50 rounded-lg"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
-                <span className="text-sm text-gray-900">
-                  {decision.description}
-                </span>
-              </div>
-              <button
-                onClick={() => deleteDecision(decision.id)}
-                className="text-gray-400 hover:text-red-600"
-              >
-                <Trash2 size={16} />
-              </button>
+              {editingDecisionId === decision.id ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editingDecisionText}
+                    onChange={(e) => setEditingDecisionText(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEditDecision(decision.id)}
+                      className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingDecisionId(null)}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
+                    <span className="text-sm text-gray-900">{decision.description}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => startEditDecision(decision)}
+                      className="text-gray-400 hover:text-blue-600"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => deleteDecision(decision.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {decisions.length === 0 && (
@@ -887,68 +1026,117 @@ export default function MeetingDetailPage({
           {actionItems.map((action, index) => (
             <div
               key={action.id}
-              className="flex items-center justify-between p-3 bg-orange-50 rounded-lg"
+              className="p-3 bg-orange-50 rounded-lg"
             >
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
-                <button
-                  onClick={() => toggleActionStatus(action.id, action.status)}
-                >
-                  {action.status === "completed" ? (
-                    <CheckCircle size={20} className="text-green-600" />
-                  ) : (
-                    <Circle size={20} className="text-gray-400" />
-                  )}
-                </button>
-                <div>
-                  <p
-                    className={`text-sm ${action.status === "completed" ? "line-through text-gray-500" : "text-gray-900"}`}
-                  >
-                    {action.description}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1">
-                    {action.person && (
-                      <span className="text-xs text-gray-500">
-                        Assigned to: {action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}
-                      </span>
-                    )}
-                    {action.due_date && (
-                      <span className="text-xs text-gray-500">
-                        Due: {format(new Date(action.due_date), "dd/MM/yyyy")}
-                      </span>
-                    )}
-                    {action.email_sent && (
-                      <span className="text-xs text-green-600">
-                        Email sent
-                      </span>
-                    )}
+              {editingActionId === action.id ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editingActionDescription}
+                    onChange={(e) => setEditingActionDescription(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={editingActionAssignee}
+                      onChange={(e) => setEditingActionAssignee(e.target.value)}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                    >
+                      <option value="">Assign to...</option>
+                      {people.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.name}{person.organization ? `, ${person.organization}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-gray-600 whitespace-nowrap">Due</span>
+                      <input
+                        type="date"
+                        value={editingActionDueDate}
+                        onChange={(e) => setEditingActionDueDate(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEditAction(action.id)}
+                      className="bg-orange-600 text-white px-3 py-1 rounded text-xs hover:bg-orange-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingActionId(null)}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {action.person && !action.email_sent && (
-                  <button
-                    onClick={() => sendEmailNotification(action)}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
-                    title="Send email notification"
-                  >
-                    <Send size={14} />
-                    Notify
-                  </button>
-                )}
-                <button
-                  onClick={() => deleteActionItem(action.id)}
-                  className="text-gray-400 hover:text-red-600"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
+                    <button onClick={() => toggleActionStatus(action.id, action.status)}>
+                      {action.status === "completed" ? (
+                        <CheckCircle size={20} className="text-green-600" />
+                      ) : (
+                        <Circle size={20} className="text-gray-400" />
+                      )}
+                    </button>
+                    <div>
+                      <p className={`text-sm ${action.status === "completed" ? "line-through text-gray-500" : "text-gray-900"}`}>
+                        {action.description}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        {action.person && (
+                          <span className="text-xs text-gray-500">
+                            Assigned to: {action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}
+                          </span>
+                        )}
+                        {action.due_date && (
+                          <span className="text-xs text-gray-500">
+                            Due: {format(new Date(action.due_date), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                        {action.email_sent && (
+                          <span className="text-xs text-green-600">Email sent</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {action.person && !action.email_sent && (
+                      <button
+                        onClick={() => sendEmailNotification(action)}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+                        title="Send email notification"
+                      >
+                        <Send size={14} />
+                        Notify
+                      </button>
+                    )}
+                    <button
+                      onClick={() => startEditAction(action)}
+                      className="text-gray-400 hover:text-blue-600"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => deleteActionItem(action.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {actionItems.length === 0 && (
-            <p className="text-sm text-gray-500">
-              No action items yet.
-            </p>
+            <p className="text-sm text-gray-500">No action items yet.</p>
           )}
         </div>
 
