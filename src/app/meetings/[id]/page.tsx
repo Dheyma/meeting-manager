@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import DateTimePicker, { buildISODate, parseDateParts, buildDateOnly, parseDateOnly } from "@/components/DateTimePicker";
 import { useDepartments } from "@/hooks/useDepartments";
+import { logAction } from "@/lib/log";
 import {
   Calendar,
   MapPin,
@@ -147,6 +148,7 @@ export default function MeetingDetailPage({
 
   async function updateStatus(status: Meeting["status"]) {
     await supabase.from("meetings").update({ status }).eq("id", id);
+    await logAction(`Changed meeting status to "${status.replace("_", " ")}"`, "meeting", meeting?.title);
     fetchAll();
     toast.success(`Meeting marked as ${status.replace("_", " ")}`);
   }
@@ -163,6 +165,7 @@ export default function MeetingDetailPage({
       toast.error(error.message);
       return;
     }
+    await logAction("Added agenda item", "agenda_item", `"${newAgendaTitle}" in meeting: ${meeting?.title}`);
     setNewAgendaTitle("");
     setNewAgendaDescription("");
     fetchAll();
@@ -224,6 +227,7 @@ export default function MeetingDetailPage({
         .update({ background_document_url: data.url, background_document_name: data.name })
         .eq("id", id);
 
+      await logAction("Uploaded background document", "document", `"${data.name}" in meeting: ${meeting?.title}`);
       toast.success("Background document uploaded");
       fetchAll();
     } catch {
@@ -238,6 +242,7 @@ export default function MeetingDetailPage({
       .from("meetings")
       .update({ background_document_url: null, background_document_name: null })
       .eq("id", id);
+    await logAction("Removed background document", "document", `meeting: ${meeting?.title}`);
     toast.success("Background document removed");
     fetchAll();
   }
@@ -264,6 +269,7 @@ export default function MeetingDetailPage({
         .update({ agenda_document_url: data.url, agenda_document_name: data.name })
         .eq("id", id);
 
+      await logAction("Uploaded agenda document", "document", `"${data.name}" in meeting: ${meeting?.title}`);
       toast.success("Agenda document uploaded");
       fetchAll();
     } catch {
@@ -278,6 +284,7 @@ export default function MeetingDetailPage({
       .from("meetings")
       .update({ agenda_document_url: null, agenda_document_name: null })
       .eq("id", id);
+    await logAction("Removed agenda document", "document", `meeting: ${meeting?.title}`);
     toast.success("Agenda document removed");
     fetchAll();
   }
@@ -310,6 +317,7 @@ export default function MeetingDetailPage({
         document_name: data.name,
       });
 
+      await logAction(`Uploaded additional ${type} document`, "document", `"${data.name}" in meeting: ${meeting?.title}`);
       toast.success("Document uploaded");
       fetchAll();
     } catch {
@@ -320,7 +328,9 @@ export default function MeetingDetailPage({
   }
 
   async function deleteAdditionalDoc(docId: string) {
+    const doc = meetingDocs.find((d) => d.id === docId);
     await supabase.from("meeting_documents").delete().eq("id", docId);
+    await logAction("Deleted additional document", "document", `"${doc?.document_name ?? docId}" in meeting: ${meeting?.title}`);
     fetchAll();
   }
 
@@ -334,6 +344,7 @@ export default function MeetingDetailPage({
       toast.error(error.message);
       return;
     }
+    await logAction("Added decision", "decision", `meeting: ${meeting?.title}`);
     setNewDecision("");
     fetchAll();
   }
@@ -350,6 +361,7 @@ export default function MeetingDetailPage({
       toast.error(error.message);
       return;
     }
+    await logAction("Added action item", "action_item", `"${newActionDescription}" in meeting: ${meeting?.title}`);
     setNewActionDescription("");
     setNewActionAssignee("");
     setNewActionDueDay("");
@@ -477,12 +489,15 @@ export default function MeetingDetailPage({
     }
 
     setEditing(false);
+    await logAction("Updated meeting details", "meeting", editTitle);
     toast.success("Meeting updated");
     fetchAll();
   }
 
   async function deleteAgendaItem(agendaId: string) {
+    const item = agendaItems.find((a) => a.id === agendaId);
     await supabase.from("agenda_items").delete().eq("id", agendaId);
+    await logAction("Deleted agenda item", "agenda_item", `"${item?.title ?? agendaId}" in meeting: ${meeting?.title}`);
     fetchAll();
   }
 
@@ -499,13 +514,16 @@ export default function MeetingDetailPage({
       .update({ title: editingAgendaTitle.trim(), description: editingAgendaDescription.trim() || null })
       .eq("id", agendaId);
     if (error) { toast.error(error.message); return; }
+    await logAction("Updated agenda item", "agenda_item", `"${editingAgendaTitle}" in meeting: ${meeting?.title}`);
     setEditingAgendaId(null);
     toast.success("Agenda item updated");
     fetchAll();
   }
 
   async function deleteDecision(decisionId: string) {
+    const dec = decisions.find((d) => d.id === decisionId);
     await supabase.from("decisions").delete().eq("id", decisionId);
+    await logAction("Deleted decision", "decision", `meeting: ${meeting?.title} — "${dec?.description?.slice(0, 60) ?? ""}"`);
     fetchAll();
   }
 
@@ -521,13 +539,16 @@ export default function MeetingDetailPage({
       .update({ description: editingDecisionText.trim() })
       .eq("id", decisionId);
     if (error) { toast.error(error.message); return; }
+    await logAction("Updated decision", "decision", `meeting: ${meeting?.title}`);
     setEditingDecisionId(null);
     toast.success("Decision updated");
     fetchAll();
   }
 
   async function deleteActionItem(actionId: string) {
+    const item = actionItems.find((a) => a.id === actionId);
     await supabase.from("action_items").delete().eq("id", actionId);
+    await logAction("Deleted action item", "action_item", `meeting: ${meeting?.title} — "${item?.description?.slice(0, 60) ?? ""}"`);
     fetchAll();
   }
 
@@ -537,6 +558,8 @@ export default function MeetingDetailPage({
       .update({ transcribed_by: editTranscribedBy || null })
       .eq("id", id);
     if (error) { toast.error(error.message); return; }
+    const transcriber = people.find((p) => p.id === editTranscribedBy);
+    await logAction("Set transcribed by", "meeting", `${transcriber?.name ?? "None"} for meeting: ${meeting?.title}`);
     setEditingTranscribedBy(false);
     toast.success("Transcribed by updated");
     fetchAll();
@@ -563,6 +586,7 @@ export default function MeetingDetailPage({
       })
       .eq("id", actionId);
     if (error) { toast.error(error.message); return; }
+    await logAction("Updated action item", "action_item", `meeting: ${meeting?.title}`);
     setEditingActionId(null);
     toast.success("Action item updated");
     fetchAll();

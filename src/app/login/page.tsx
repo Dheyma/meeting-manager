@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { setStoredUser, getStoredUser } from "@/lib/auth";
+import { logActionAs } from "@/lib/log";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
@@ -48,6 +49,7 @@ export default function LoginPage() {
       if (error || !data) { toast.error("Login failed"); return; }
       if (data.password !== password) { toast.error("Incorrect password"); return; }
 
+      await logActionAs(data.id, data.name, "Logged in", "auth");
       setStoredUser({ personId: data.id, name: data.name });
       router.replace("/");
     } finally {

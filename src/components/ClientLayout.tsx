@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getStoredUser, clearStoredUser, AuthUser } from "@/lib/auth";
+import { logActionAs } from "@/lib/log";
 import Link from "next/link";
 import Image from "next/image";
 import { Toaster } from "react-hot-toast";
-import { CalendarDays, Users, Home, LogOut } from "lucide-react";
+import { CalendarDays, Users, Home, LogOut, ClipboardList } from "lucide-react";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -24,7 +25,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     setReady(true);
   }, [pathname, router]);
 
-  function logout() {
+  async function logout() {
+    if (user) {
+      await logActionAs(user.personId, user.name, "Logged out", "auth");
+    }
     clearStoredUser();
     setUser(null);
     router.replace("/login");
@@ -69,6 +73,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <Link href="/people" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
               <Users size={18} />
               People
+            </Link>
+            <Link href="/system-log" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <ClipboardList size={18} />
+              System Log
             </Link>
             <div className="flex items-center gap-3 ml-2 pl-4 border-l border-green-300">
               <span className="text-sm font-medium text-gray-700">{user?.name}</span>

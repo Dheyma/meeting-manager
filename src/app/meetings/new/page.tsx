@@ -7,6 +7,7 @@ import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import DateTimePicker, { buildISODate } from "@/components/DateTimePicker";
 import { useDepartments } from "@/hooks/useDepartments";
+import { logAction } from "@/lib/log";
 
 export default function NewMeetingPage() {
   const router = useRouter();
@@ -76,6 +77,7 @@ export default function NewMeetingPage() {
       await supabase.from("meeting_attendees").insert(attendees);
     }
 
+    await logAction("Created meeting", "meeting", title);
     toast.success("Meeting created");
     router.push(`/meetings/${meeting.id}`);
   }

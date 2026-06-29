@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Pencil, X, ArrowUp, ArrowDown, KeyRound } from "lucide-react";
+import { logAction } from "@/lib/log";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -60,6 +61,7 @@ export default function PeoplePage() {
       password: newPassword || "1234",
     });
     if (error) { toast.error(error.message); return; }
+    await logAction("Added person", "person", name);
     toast.success("Person added");
     setName(""); setDesignation(""); setEmail(""); setPhone(""); setOrganization(""); setNewPassword("1234");
     setShowForm(false);
@@ -86,6 +88,7 @@ export default function PeoplePage() {
       organization: editOrganization || null,
     }).eq("id", editingPerson.id);
     if (error) { toast.error(error.message); return; }
+    await logAction("Updated person details", "person", editName);
     toast.success("Person updated");
     setEditingPerson(null);
     fetchPeople();
@@ -112,6 +115,7 @@ export default function PeoplePage() {
       .eq("id", changePwdPerson.id);
 
     if (updateError) { toast.error(updateError.message); return; }
+    await logAction("Changed password", "person", changePwdPerson.name);
     toast.success("Password updated");
     setChangePwdPerson(null);
     setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
@@ -135,6 +139,8 @@ export default function PeoplePage() {
   async function handleDelete(id: string) {
     const { error } = await supabase.from("people").delete().eq("id", id);
     if (error) { toast.error("Failed to delete"); return; }
+    const deleted = people.find((p) => p.id === id);
+    await logAction("Deleted person", "person", deleted?.name ?? id);
     toast.success("Person removed");
     fetchPeople();
   }
