@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   Meeting,
@@ -29,6 +30,7 @@ import {
   Pencil,
   X,
   Building2,
+  CalendarClock,
 } from "lucide-react";
 
 export default function MeetingDetailPage({
@@ -37,6 +39,7 @@ export default function MeetingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [attendees, setAttendees] = useState<MeetingAttendee[]>([]);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
@@ -71,6 +74,13 @@ export default function MeetingDetailPage({
   const [editingActionDueMonth, setEditingActionDueMonth] = useState("");
   const [editingActionDueYear, setEditingActionDueYear] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleDay, setRescheduleDay] = useState("");
+  const [rescheduleMonth, setRescheduleMonth] = useState("");
+  const [rescheduleYear, setRescheduleYear] = useState("");
+  const [rescheduleHour, setRescheduleHour] = useState("");
+  const [rescheduleMinute, setRescheduleMinute] = useState("");
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -416,6 +426,43 @@ export default function MeetingDetailPage({
     fetchAll();
   }
 
+  async function deleteMeeting() {
+    await supabase.from("action_items").delete().eq("meeting_id", id);
+    await supabase.from("decisions").delete().eq("meeting_id", id);
+    await supabase.from("agenda_items").delete().eq("meeting_id", id);
+    await supabase.from("meeting_attendees").delete().eq("meeting_id", id);
+    await supabase.from("meeting_documents").delete().eq("meeting_id", id);
+    await supabase.from("meetings").delete().eq("id", id);
+    await logAction("Deleted meeting", "meeting", `Meeting: "${meeting?.title}"`);
+    toast.success("Meeting deleted");
+    router.push("/meetings");
+  }
+
+  function openReschedule() {
+    if (!meeting) return;
+    const parts = parseDateParts(meeting.date);
+    setRescheduleDay(parts.day);
+    setRescheduleMonth(parts.month);
+    setRescheduleYear(parts.year);
+    setRescheduleHour(parts.hour);
+    setRescheduleMinute(parts.minute);
+    setRescheduling(true);
+  }
+
+  async function saveReschedule(e: React.FormEvent) {
+    e.preventDefault();
+    const newDate = buildISODate(rescheduleDay, rescheduleMonth, rescheduleYear, rescheduleHour, rescheduleMinute);
+    const { error } = await supabase
+      .from("meetings")
+      .update({ date: newDate, status: "scheduled" })
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    await logAction("Rescheduled meeting", "meeting", `Meeting: "${meeting?.title}" rescheduled to ${rescheduleDay}/${rescheduleMonth}/${rescheduleYear} ${rescheduleHour}:${rescheduleMinute}`);
+    setRescheduling(false);
+    toast.success("Meeting rescheduled");
+    fetchAll();
+  }
+
   function openEdit() {
     if (!meeting) return;
     setEditTitle(meeting.title);
@@ -635,13 +682,20 @@ export default function MeetingDetailPage({
               ) : null;
             })()}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={openEdit}
               className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200"
             >
               <Pencil size={14} />
               Edit
+            </button>
+            <button
+              onClick={openReschedule}
+              className="flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-100"
+            >
+              <CalendarClock size={14} />
+              Reschedule
             </button>
             {meeting.status !== "completed" && (
               <button
@@ -659,9 +713,66 @@ export default function MeetingDetailPage({
                 Start Meeting
               </button>
             )}
+            {confirmingDelete ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-red-600 font-medium">Delete?</span>
+                <button
+                  onClick={deleteMeeting}
+                  className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="flex items-center gap-1 bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-sm hover:bg-red-100"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Reschedule Modal */}
+      {rescheduling && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Reschedule Meeting</h2>
+              <button onClick={() => setRescheduling(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Select the new date and time for <span className="font-medium text-gray-800">{meeting.title}</span></p>
+            <form onSubmit={saveReschedule} className="space-y-4">
+              <DateTimePicker
+                day={rescheduleDay} month={rescheduleMonth} year={rescheduleYear}
+                hour={rescheduleHour} minute={rescheduleMinute}
+                onDayChange={setRescheduleDay} onMonthChange={setRescheduleMonth}
+                onYearChange={setRescheduleYear} onHourChange={setRescheduleHour}
+                onMinuteChange={setRescheduleMinute}
+              />
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                  Confirm Reschedule
+                </button>
+                <button type="button" onClick={() => setRescheduling(false)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editing && (

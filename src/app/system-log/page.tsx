@@ -38,6 +38,12 @@ function formatRemark(action: string, desc: string | null): string {
   if (action === "Updated meeting details")
     return `Edited details of ${d}.`;
 
+  if (action === "Rescheduled meeting")
+    return `Rescheduled ${d}.`;
+
+  if (action === "Deleted meeting")
+    return `Deleted ${d}.`;
+
   if (action.startsWith("Changed meeting status to"))
     return `${action} — ${d}.`;
 
