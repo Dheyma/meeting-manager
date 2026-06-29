@@ -44,6 +44,9 @@ function formatRemark(action: string, desc: string | null): string {
   if (action === "Deleted meeting")
     return `Deleted ${d}.`;
 
+  if (action === "Sent meeting records via email")
+    return `Sent full meeting records via email for ${d}.`;
+
   if (action.startsWith("Changed meeting status to"))
     return `${action} — ${d}.`;
 

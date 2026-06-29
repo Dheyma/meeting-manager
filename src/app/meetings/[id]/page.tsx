@@ -76,6 +76,8 @@ export default function MeetingDetailPage({
   const [uploading, setUploading] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
+  const [emailMeetingStatus, setEmailMeetingStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [emailMeetingResult, setEmailMeetingResult] = useState<{ sent: number; skipped: number } | null>(null);
   const [rescheduleDay, setRescheduleDay] = useState("");
   const [rescheduleMonth, setRescheduleMonth] = useState("");
   const [rescheduleYear, setRescheduleYear] = useState("");
@@ -637,6 +639,70 @@ export default function MeetingDetailPage({
     setEditingActionId(null);
     toast.success("Action item updated");
     fetchAll();
+  }
+
+  async function sendMeetingRecordsEmail() {
+    if (!meeting) return;
+    setEmailMeetingStatus("sending");
+
+    const requestedByPerson = people.find((p) => p.id === meeting.requested_by);
+    const transcribedByPerson = people.find((p) => p.id === meeting.transcribed_by);
+
+    const payload = {
+      meeting: {
+        title: meeting.title,
+        date: meeting.date,
+        location: meeting.location,
+        department: meeting.department,
+        description: meeting.description,
+        status: meeting.status,
+        requestedByName: requestedByPerson?.name ?? null,
+        transcribedByName: transcribedByPerson?.name ?? null,
+      },
+      attendees: attendees.map((a) => ({
+        name: a.person?.name ?? "",
+        email: a.person?.email ?? null,
+        organization: a.person?.organization ?? null,
+      })),
+      agendaItems: agendaItems.map((i) => ({
+        title: i.title,
+        description: i.description ?? null,
+      })),
+      decisions: decisions.map((d) => ({ description: d.description })),
+      actionItems: actionItems.map((a) => ({
+        description: a.description,
+        personName: a.person?.name ?? null,
+        dueDate: a.due_date ?? null,
+        status: a.status,
+      })),
+    };
+
+    try {
+      const res = await fetch("/MMS/api/email-meeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to send email");
+        setEmailMeetingStatus("idle");
+        return;
+      }
+
+      await logAction(
+        "Sent meeting records via email",
+        "meeting",
+        `Meeting: "${meeting.title}" — sent to ${data.sent} attendee(s)`
+      );
+      setEmailMeetingResult({ sent: data.sent, skipped: data.skipped });
+      setEmailMeetingStatus("sent");
+      toast.success(`Meeting records sent to ${data.sent} attendee(s)`);
+    } catch {
+      toast.error("Failed to send email");
+      setEmailMeetingStatus("idle");
+    }
   }
 
   if (!meeting) {
@@ -1488,6 +1554,40 @@ export default function MeetingDetailPage({
                 })()
               : <span className="text-gray-400">Not assigned</span>}
           </p>
+        )}
+      </div>
+
+      {/* Send Meeting Records via Email */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Send Meeting Records</h2>
+        {emailMeetingStatus === "sent" && emailMeetingResult ? (
+          <div className="flex items-start gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+            <CheckCircle size={18} className="shrink-0 mt-0.5" />
+            <span className="text-sm">
+              Meeting records emailed to <strong>{emailMeetingResult.sent}</strong> attendee{emailMeetingResult.sent !== 1 ? "s" : ""}.
+              {emailMeetingResult.skipped > 0 && (
+                <span className="text-gray-500"> ({emailMeetingResult.skipped} attendee{emailMeetingResult.skipped !== 1 ? "s" : ""} had no email address and were skipped.)</span>
+              )}
+            </span>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-gray-700 mb-4">
+              Do you want to send the meeting records via e-mail to all the attendees?
+            </p>
+            {attendees.length === 0 ? (
+              <p className="text-sm text-gray-400 italic">No attendees added to this meeting yet.</p>
+            ) : (
+              <button
+                onClick={sendMeetingRecordsEmail}
+                disabled={emailMeetingStatus === "sending"}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm disabled:opacity-60"
+              >
+                <Send size={15} />
+                {emailMeetingStatus === "sending" ? "Sending…" : "Yes, Send to All Attendees"}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
