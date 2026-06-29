@@ -13,7 +13,7 @@ import {
 } from "@/lib/types";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
-import DateTimePicker, { buildISODate, parseDateParts } from "@/components/DateTimePicker";
+import DateTimePicker, { buildISODate, parseDateParts, buildDateOnly, parseDateOnly } from "@/components/DateTimePicker";
 import { useDepartments } from "@/hooks/useDepartments";
 import {
   Calendar,
@@ -49,7 +49,9 @@ export default function MeetingDetailPage({
   const [newDecision, setNewDecision] = useState("");
   const [newActionDescription, setNewActionDescription] = useState("");
   const [newActionAssignee, setNewActionAssignee] = useState("");
-  const [newActionDueDate, setNewActionDueDate] = useState("");
+  const [newActionDueDay, setNewActionDueDay] = useState("");
+  const [newActionDueMonth, setNewActionDueMonth] = useState("");
+  const [newActionDueYear, setNewActionDueYear] = useState("");
 
   const [editingAgendaId, setEditingAgendaId] = useState<string | null>(null);
   const [editingAgendaTitle, setEditingAgendaTitle] = useState("");
@@ -61,7 +63,9 @@ export default function MeetingDetailPage({
   const [editingActionId, setEditingActionId] = useState<string | null>(null);
   const [editingActionDescription, setEditingActionDescription] = useState("");
   const [editingActionAssignee, setEditingActionAssignee] = useState("");
-  const [editingActionDueDate, setEditingActionDueDate] = useState("");
+  const [editingActionDueDay, setEditingActionDueDay] = useState("");
+  const [editingActionDueMonth, setEditingActionDueMonth] = useState("");
+  const [editingActionDueYear, setEditingActionDueYear] = useState("");
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -337,7 +341,7 @@ export default function MeetingDetailPage({
       meeting_id: id,
       description: newActionDescription,
       assigned_to: newActionAssignee || null,
-      due_date: newActionDueDate || null,
+      due_date: buildDateOnly(newActionDueDay, newActionDueMonth, newActionDueYear),
     });
     if (error) {
       toast.error(error.message);
@@ -345,7 +349,9 @@ export default function MeetingDetailPage({
     }
     setNewActionDescription("");
     setNewActionAssignee("");
-    setNewActionDueDate("");
+    setNewActionDueDay("");
+    setNewActionDueMonth("");
+    setNewActionDueYear("");
     fetchAll();
   }
 
@@ -526,7 +532,10 @@ export default function MeetingDetailPage({
     setEditingActionId(action.id);
     setEditingActionDescription(action.description);
     setEditingActionAssignee(action.assigned_to || "");
-    setEditingActionDueDate(action.due_date || "");
+    const parts = parseDateOnly(action.due_date);
+    setEditingActionDueDay(parts.day);
+    setEditingActionDueMonth(parts.month);
+    setEditingActionDueYear(parts.year);
   }
 
   async function saveEditAction(actionId: string) {
@@ -536,7 +545,7 @@ export default function MeetingDetailPage({
       .update({
         description: editingActionDescription.trim(),
         assigned_to: editingActionAssignee || null,
-        due_date: editingActionDueDate || null,
+        due_date: buildDateOnly(editingActionDueDay, editingActionDueMonth, editingActionDueYear),
       })
       .eq("id", actionId);
     if (error) { toast.error(error.message); return; }
@@ -1118,15 +1127,27 @@ export default function MeetingDetailPage({
                         </option>
                       ))}
                     </select>
-                    <label className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <span className="text-xs text-gray-600 whitespace-nowrap">Due</span>
-                      <input
-                        type="date"
-                        value={editingActionDueDate}
-                        onChange={(e) => setEditingActionDueDate(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
-                      />
-                    </label>
+                      <select value={editingActionDueDay} onChange={(e) => setEditingActionDueDay(e.target.value)} className="border border-gray-300 rounded px-1 py-1.5 text-sm">
+                        <option value="">DD</option>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <option key={d} value={String(d)}>{d}</option>
+                        ))}
+                      </select>
+                      <select value={editingActionDueMonth} onChange={(e) => setEditingActionDueMonth(e.target.value)} className="border border-gray-300 rounded px-1 py-1.5 text-sm">
+                        <option value="">MM</option>
+                        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                          <option key={m} value={String(i + 1)}>{m}</option>
+                        ))}
+                      </select>
+                      <select value={editingActionDueYear} onChange={(e) => setEditingActionDueYear(e.target.value)} className="border border-gray-300 rounded px-1 py-1.5 text-sm">
+                        <option value="">YYYY</option>
+                        {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => (
+                          <option key={y} value={String(y)}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -1232,15 +1253,27 @@ export default function MeetingDetailPage({
                 </option>
               ))}
             </select>
-            <label className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <span className="text-sm text-gray-600 whitespace-nowrap">To be completed by</span>
-              <input
-                type="date"
-                value={newActionDueDate}
-                onChange={(e) => setNewActionDueDate(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              />
-            </label>
+              <select value={newActionDueDay} onChange={(e) => setNewActionDueDay(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-2 text-sm">
+                <option value="">DD</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={String(d)}>{d}</option>
+                ))}
+              </select>
+              <select value={newActionDueMonth} onChange={(e) => setNewActionDueMonth(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-2 text-sm">
+                <option value="">MM</option>
+                {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                  <option key={m} value={String(i + 1)}>{m}</option>
+                ))}
+              </select>
+              <select value={newActionDueYear} onChange={(e) => setNewActionDueYear(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-2 text-sm">
+                <option value="">YYYY</option>
+                {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
             <button
               type="submit"
               className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"

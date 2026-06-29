@@ -100,6 +100,17 @@ export default function DateTimePicker({
   );
 }
 
+export function buildDateOnly(day: string, month: string, year: string): string | null {
+  if (!day || !month || !year) return null;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+export function parseDateOnly(dateStr: string | undefined | null) {
+  if (!dateStr) return { day: "", month: "", year: "" };
+  const [y, m, d] = dateStr.split("-");
+  return { day: String(parseInt(d)), month: String(parseInt(m)), year: y };
+}
+
 export function buildISODate(day: string, month: string, year: string, hour: string, minute: string): string {
   const m = month.padStart(2, "0");
   const d = day.padStart(2, "0");
