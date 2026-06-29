@@ -53,6 +53,9 @@ export default function MeetingDetailPage({
   const [newActionDueMonth, setNewActionDueMonth] = useState("");
   const [newActionDueYear, setNewActionDueYear] = useState("");
 
+  const [editingTranscribedBy, setEditingTranscribedBy] = useState(false);
+  const [editTranscribedBy, setEditTranscribedBy] = useState("");
+
   const [editingAgendaId, setEditingAgendaId] = useState<string | null>(null);
   const [editingAgendaTitle, setEditingAgendaTitle] = useState("");
   const [editingAgendaDescription, setEditingAgendaDescription] = useState("");
@@ -525,6 +528,17 @@ export default function MeetingDetailPage({
 
   async function deleteActionItem(actionId: string) {
     await supabase.from("action_items").delete().eq("id", actionId);
+    fetchAll();
+  }
+
+  async function saveTranscribedBy() {
+    const { error } = await supabase
+      .from("meetings")
+      .update({ transcribed_by: editTranscribedBy || null })
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setEditingTranscribedBy(false);
+    toast.success("Transcribed by updated");
     fetchAll();
   }
 
@@ -1282,6 +1296,64 @@ export default function MeetingDetailPage({
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Meeting Transcribed By */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-gray-900">Meeting Transcribed By</h2>
+          {!editingTranscribedBy && (
+            <button
+              onClick={() => {
+                setEditTranscribedBy(meeting.transcribed_by || "");
+                setEditingTranscribedBy(true);
+              }}
+              className="text-gray-400 hover:text-blue-600"
+            >
+              <Pencil size={15} />
+            </button>
+          )}
+        </div>
+        {editingTranscribedBy ? (
+          <div className="flex items-center gap-3">
+            <select
+              value={editTranscribedBy}
+              onChange={(e) => setEditTranscribedBy(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              autoFocus
+            >
+              <option value="">Not assigned</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}{person.organization ? `, ${person.organization}` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={saveTranscribedBy}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setEditingTranscribedBy(false)}
+              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-700">
+            {meeting.transcribed_by
+              ? (() => {
+                  const person = people.find((p) => p.id === meeting.transcribed_by);
+                  return person
+                    ? `${person.name}${person.organization ? `, ${person.organization}` : ""}`
+                    : "Unknown";
+                })()
+              : <span className="text-gray-400">Not assigned</span>}
+          </p>
+        )}
       </div>
     </div>
   );

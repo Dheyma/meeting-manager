@@ -21,6 +21,7 @@ export interface Meeting {
   agenda_document_name?: string;
   background_document_url?: string;
   background_document_name?: string;
+  transcribed_by?: string;
   created_at: string;
   updated_at: string;
 }
