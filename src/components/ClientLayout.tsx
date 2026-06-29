@@ -52,7 +52,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <div className="flex items-center justify-between px-2">
           <Link href="/" className="flex items-center">
             <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={180} height={180} className="bg-green-100" unoptimized />
-            <div className="flex flex-col -ml-6">
+            <div className="flex flex-col ml-3">
               <span className="text-4xl font-bold" style={{ color: "#B8860B" }}>
                 Dheyma Global Ventures Pvt. Ltd.
               </span>
