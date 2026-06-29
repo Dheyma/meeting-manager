@@ -1,0 +1,89 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { getStoredUser, clearStoredUser, AuthUser } from "@/lib/auth";
+import Link from "next/link";
+import Image from "next/image";
+import { Toaster } from "react-hot-toast";
+import { CalendarDays, Users, Home, LogOut } from "lucide-react";
+
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (!stored && pathname !== "/login") {
+      router.replace("/login");
+      return;
+    }
+    setUser(stored);
+    setReady(true);
+  }, [pathname, router]);
+
+  function logout() {
+    clearStoredUser();
+    setUser(null);
+    router.replace("/login");
+  }
+
+  if (!ready && pathname !== "/login") return null;
+
+  if (pathname === "/login") {
+    return (
+      <>
+        <Toaster position="top-right" />
+        {children}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Toaster position="top-right" />
+      <nav className="bg-green-100 border-b border-green-200 pt-0 -mb-4 pb-0">
+        <div className="flex items-center justify-between px-2">
+          <Link href="/" className="flex items-center">
+            <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={360} height={360} className="rounded" />
+            <div className="flex flex-col -ml-8">
+              <span className="text-4xl font-bold" style={{ color: "#B8860B" }}>
+                Dheyma Global Ventures Pvt. Ltd.
+              </span>
+              <span className="text-xl font-semibold" style={{ color: "#B8860B" }}>
+                Meeting Management System
+              </span>
+            </div>
+          </Link>
+          <div className="flex items-center gap-6 mr-8">
+            <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <Home size={18} />
+              Dashboard
+            </Link>
+            <Link href="/meetings" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <CalendarDays size={18} />
+              Meetings
+            </Link>
+            <Link href="/people" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <Users size={18} />
+              People
+            </Link>
+            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-green-300">
+              <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+              <button
+                onClick={logout}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600"
+              >
+                <LogOut size={15} />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+    </>
+  );
+}

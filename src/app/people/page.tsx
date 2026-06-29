@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
-import { Plus, Trash2, Pencil, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Pencil, X, ArrowUp, ArrowDown, KeyRound } from "lucide-react";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -14,59 +14,54 @@ export default function PeoplePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [organization, setOrganization] = useState("");
+  const [newPassword, setNewPassword] = useState("1234");
+
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesignation, setEditDesignation] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editOrganization, setEditOrganization] = useState("");
+
+  const [changePwdPerson, setChangePwdPerson] = useState<Person | null>(null);
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+
   const [sortField, setSortField] = useState<keyof Person>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     fetchPeople();
-
     const channel = supabase
       .channel("people-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "people" }, () => {
-        fetchPeople();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "people" }, () => fetchPeople())
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   async function fetchPeople() {
     const { data, error } = await supabase
       .from("people")
-      .select("*")
+      .select("id, name, designation, email, phone, organization, created_at")
       .order("name");
-    if (error) {
-      toast.error("Failed to load people");
-      return;
-    }
+    if (error) { toast.error("Failed to load people"); return; }
     setPeople(data || []);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const { error } = await supabase
-      .from("people")
-      .insert({ name, designation: designation || null, email: email || null, phone: phone || null, organization: organization || null });
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
+    const { error } = await supabase.from("people").insert({
+      name,
+      designation: designation || null,
+      email: email || null,
+      phone: phone || null,
+      organization: organization || null,
+      password: newPassword || "1234",
+    });
+    if (error) { toast.error(error.message); return; }
     toast.success("Person added");
-    setName("");
-    setDesignation("");
-    setEmail("");
-    setPhone("");
-    setOrganization("");
+    setName(""); setDesignation(""); setEmail(""); setPhone(""); setOrganization(""); setNewPassword("1234");
     setShowForm(false);
     fetchPeople();
   }
@@ -83,23 +78,43 @@ export default function PeoplePage() {
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editingPerson) return;
-    const { error } = await supabase
-      .from("people")
-      .update({
-        name: editName,
-        designation: editDesignation || null,
-        email: editEmail || null,
-        phone: editPhone || null,
-        organization: editOrganization || null,
-      })
-      .eq("id", editingPerson.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const { error } = await supabase.from("people").update({
+      name: editName,
+      designation: editDesignation || null,
+      email: editEmail || null,
+      phone: editPhone || null,
+      organization: editOrganization || null,
+    }).eq("id", editingPerson.id);
+    if (error) { toast.error(error.message); return; }
     toast.success("Person updated");
     setEditingPerson(null);
     fetchPeople();
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!changePwdPerson) return;
+    if (newPwd !== confirmPwd) { toast.error("New passwords do not match"); return; }
+    if (newPwd.length < 1) { toast.error("Password cannot be empty"); return; }
+
+    const { data, error } = await supabase
+      .from("people")
+      .select("password")
+      .eq("id", changePwdPerson.id)
+      .single();
+
+    if (error || !data) { toast.error("Could not verify current password"); return; }
+    if (data.password !== currentPwd) { toast.error("Current password is incorrect"); return; }
+
+    const { error: updateError } = await supabase
+      .from("people")
+      .update({ password: newPwd })
+      .eq("id", changePwdPerson.id);
+
+    if (updateError) { toast.error(updateError.message); return; }
+    toast.success("Password updated");
+    setChangePwdPerson(null);
+    setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
   }
 
   function toggleSort(field: keyof Person) {
@@ -119,10 +134,7 @@ export default function PeoplePage() {
 
   async function handleDelete(id: string) {
     const { error } = await supabase.from("people").delete().eq("id", id);
-    if (error) {
-      toast.error("Failed to delete");
-      return;
-    }
+    if (error) { toast.error("Failed to delete"); return; }
     toast.success("Person removed");
     fetchPeople();
   }
@@ -141,156 +153,105 @@ export default function PeoplePage() {
       </div>
 
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white border border-gray-200 rounded-lg p-6 mb-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full border border-gray-300 rounded-lg px-3 py-2" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Designation
-              </label>
-              <input
-                type="text"
-                value={designation}
-                onChange={(e) => setDesignation(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+              <input type="text" value={designation} onChange={(e) => setDesignation(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department / Organisation
-              </label>
-              <input
-                type="text"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department / Organisation</label>
+              <input type="text" value={organization} onChange={(e) => setOrganization(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Default: 1234" className="w-full border border-gray-300 rounded-lg px-3 py-2" />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              Cancel
-            </button>
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Save</button>
+            <button type="button" onClick={() => setShowForm(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
           </div>
         </form>
       )}
 
+      {/* Edit Person Modal */}
       {editingPerson && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Edit Person</h2>
-              <button onClick={() => setEditingPerson(null)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
-              </button>
+              <button onClick={() => setEditingPerson(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
+                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} required className="w-full border border-gray-300 rounded-lg px-3 py-2" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
-                <input
-                  type="text"
-                  value={editDesignation}
-                  onChange={(e) => setEditDesignation(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
+                <input type="text" value={editDesignation} onChange={(e) => setEditDesignation(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department / Organisation</label>
-                <input
-                  type="text"
-                  value={editOrganization}
-                  onChange={(e) => setEditOrganization(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
+                <input type="text" value={editOrganization} onChange={(e) => setEditOrganization(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
+                <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
+                <input type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingPerson(null)}
-                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
+                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Save Changes</button>
+                <button type="button" onClick={() => setEditingPerson(null)} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {changePwdPerson && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
+              <button onClick={() => { setChangePwdPerson(null); setCurrentPwd(""); setNewPwd(""); setConfirmPwd(""); }} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Changing password for <span className="font-medium text-gray-800">{changePwdPerson.name}</span></p>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <input type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} required placeholder="Enter current password" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} required placeholder="Enter new password" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} required placeholder="Re-enter new password" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="submit" className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 text-sm">Update Password</button>
+                <button type="button" onClick={() => { setChangePwdPerson(null); setCurrentPwd(""); setNewPwd(""); setConfirmPwd(""); }} className="bg-gray-200 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-300 text-sm">Cancel</button>
               </div>
             </form>
           </div>
@@ -309,16 +270,10 @@ export default function PeoplePage() {
                 ["email", "Email"],
                 ["phone", "Phone Number"],
               ] as [keyof Person, string][]).map(([field, label]) => (
-                <th
-                  key={field}
-                  onClick={() => toggleSort(field)}
-                  className="text-left px-6 py-3 text-sm font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none"
-                >
+                <th key={field} onClick={() => toggleSort(field)} className="text-left px-6 py-3 text-sm font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none">
                   <div className="flex items-center gap-1">
                     {label}
-                    {sortField === field && (
-                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                    )}
+                    {sortField === field && (sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                   </div>
                 </th>
               ))}
@@ -329,33 +284,20 @@ export default function PeoplePage() {
             {sortedPeople.map((person, index) => (
               <tr key={person.id}>
                 <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {person.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {person.designation || "—"}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {person.organization || "—"}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {person.email}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {person.phone || "—"}
-                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">{person.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{person.designation || "—"}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{person.organization || "—"}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{person.email}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{person.phone || "—"}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => openEdit(person)}
-                      className="text-gray-400 hover:text-blue-600"
-                    >
+                    <button onClick={() => openEdit(person)} className="text-gray-400 hover:text-blue-600" title="Edit">
                       <Pencil size={16} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(person.id)}
-                      className="text-gray-400 hover:text-red-600"
-                    >
+                    <button onClick={() => { setChangePwdPerson(person); setCurrentPwd(""); setNewPwd(""); setConfirmPwd(""); }} className="text-gray-400 hover:text-yellow-600" title="Change Password">
+                      <KeyRound size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(person.id)} className="text-gray-400 hover:text-red-600" title="Delete">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -364,10 +306,7 @@ export default function PeoplePage() {
             ))}
             {people.length === 0 && (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-8 text-center text-gray-500"
-                >
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                   No people added yet. Click &quot;Add Person&quot; to get started.
                 </td>
               </tr>

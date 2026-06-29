@@ -5,6 +5,7 @@ export interface Person {
   email: string;
   phone?: string;
   organization?: string;
+  password?: string;
   created_at: string;
 }
 
