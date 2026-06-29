@@ -53,10 +53,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <Link href="/" className="flex items-center">
             <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={180} height={180} className="bg-green-100" unoptimized />
             <div className="flex flex-col ml-3">
-              <span className="text-4xl font-bold" style={{ color: "#B8860B" }}>
+              <span className="text-4xl font-bold" style={{ color: "#bea064" }}>
                 Dheyma Global Ventures Pvt. Ltd.
               </span>
-              <span className="text-xl font-semibold" style={{ color: "#B8860B" }}>
+              <span className="text-xl font-semibold" style={{ color: "#bea064" }}>
                 Meeting Management System
               </span>
             </div>
