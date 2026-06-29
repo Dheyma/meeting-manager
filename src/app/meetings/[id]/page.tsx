@@ -9,6 +9,7 @@ import {
   Decision,
   ActionItem,
   Person,
+  MeetingDocument,
 } from "@/lib/types";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -41,6 +42,7 @@ export default function MeetingDetailPage({
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [meetingDocs, setMeetingDocs] = useState<MeetingDocument[]>([]);
 
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
   const [newAgendaDescription, setNewAgendaDescription] = useState("");
@@ -89,6 +91,7 @@ export default function MeetingDetailPage({
       .on("postgres_changes", { event: "*", schema: "public", table: "decisions", filter: `meeting_id=eq.${id}` }, () => fetchAll())
       .on("postgres_changes", { event: "*", schema: "public", table: "action_items", filter: `meeting_id=eq.${id}` }, () => fetchAll())
       .on("postgres_changes", { event: "*", schema: "public", table: "people" }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "meeting_documents", filter: `meeting_id=eq.${id}` }, () => fetchAll())
       .subscribe();
 
     return () => {
@@ -97,7 +100,7 @@ export default function MeetingDetailPage({
   }, [id]);
 
   async function fetchAll() {
-    const [meetingRes, attendeesRes, agendaRes, decisionsRes, actionsRes, peopleRes] =
+    const [meetingRes, attendeesRes, agendaRes, decisionsRes, actionsRes, peopleRes, docsRes] =
       await Promise.all([
         supabase.from("meetings").select("*").eq("id", id).single(),
         supabase
@@ -115,6 +118,7 @@ export default function MeetingDetailPage({
           .select("*, person:people(*)")
           .eq("meeting_id", id),
         supabase.from("people").select("*").order("name"),
+        supabase.from("meeting_documents").select("*").eq("meeting_id", id).order("created_at"),
       ]);
 
     if (meetingRes.data) setMeeting(meetingRes.data);
@@ -123,6 +127,7 @@ export default function MeetingDetailPage({
     if (decisionsRes.data) setDecisions(decisionsRes.data);
     if (actionsRes.data) setActionItems(actionsRes.data);
     if (peopleRes.data) setPeople(peopleRes.data);
+    if (docsRes.data) setMeetingDocs(docsRes.data);
   }
 
   async function toggleAttendance(attendeeId: string, current: boolean) {
@@ -267,6 +272,48 @@ export default function MeetingDetailPage({
       .update({ agenda_document_url: null, agenda_document_name: null })
       .eq("id", id);
     toast.success("Agenda document removed");
+    fetchAll();
+  }
+
+  async function handleAdditionalDocUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "background" | "agenda"
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Upload failed");
+        return;
+      }
+
+      await supabase.from("meeting_documents").insert({
+        meeting_id: id,
+        type,
+        document_url: data.url,
+        document_name: data.name,
+      });
+
+      toast.success("Document uploaded");
+      fetchAll();
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function deleteAdditionalDoc(docId: string) {
+    await supabase.from("meeting_documents").delete().eq("id", docId);
     fetchAll();
   }
 
@@ -763,38 +810,46 @@ export default function MeetingDetailPage({
 
       {/* Background Document */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Background Document</h2>
-        {meeting.background_document_url ? (
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <FileText size={18} className="text-blue-600 shrink-0" />
-            <a
-              href={meeting.background_document_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline flex-1 truncate"
-            >
-              {meeting.background_document_name || "Background Document"}
-            </a>
-            <label className="flex items-center gap-1.5 text-sm text-blue-600 cursor-pointer hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 shrink-0">
-              <Upload size={14} />
-              Change Document
-              <input type="file" className="hidden" onChange={handleBackgroundDocUpload} disabled={uploading} />
-            </label>
-            <button
-              onClick={removeBackgroundDoc}
-              className="text-gray-400 hover:text-red-600 shrink-0"
-              title="Remove document"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        ) : (
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit">
-            <Upload size={16} />
-            Upload background document
-            <input type="file" className="hidden" onChange={handleBackgroundDocUpload} disabled={uploading} />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Background Documents</h2>
+          <label className="flex items-center gap-1.5 text-sm text-blue-600 cursor-pointer hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5">
+            <Plus size={14} />
+            Add Document
+            <input type="file" className="hidden" onChange={(e) => handleAdditionalDocUpload(e, "background")} disabled={uploading} />
           </label>
-        )}
+        </div>
+        <div className="space-y-2">
+          {meeting.background_document_url && (
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <FileText size={16} className="text-blue-600 shrink-0" />
+              <a href={meeting.background_document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex-1 truncate">
+                {meeting.background_document_name || "Background Document"}
+              </a>
+              <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-1 shrink-0">
+                <Upload size={12} />
+                Change
+                <input type="file" className="hidden" onChange={handleBackgroundDocUpload} disabled={uploading} />
+              </label>
+              <button onClick={removeBackgroundDoc} className="text-gray-400 hover:text-red-600 shrink-0" title="Remove">
+                <Trash2 size={15} />
+              </button>
+            </div>
+          )}
+          {meetingDocs.filter((d) => d.type === "background").map((doc) => (
+            <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <FileText size={16} className="text-blue-600 shrink-0" />
+              <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex-1 truncate">
+                {doc.document_name}
+              </a>
+              <button onClick={() => deleteAdditionalDoc(doc.id)} className="text-gray-400 hover:text-red-600 shrink-0" title="Remove">
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+          {!meeting.background_document_url && meetingDocs.filter((d) => d.type === "background").length === 0 && (
+            <p className="text-sm text-gray-400">No background documents uploaded yet.</p>
+          )}
+        </div>
       </div>
 
       {/* Agenda */}
@@ -802,33 +857,46 @@ export default function MeetingDetailPage({
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Agenda</h2>
 
         <div className="mb-4">
-          {meeting.agenda_document_url ? (
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <FileText size={18} className="text-blue-600 shrink-0" />
-              <a
-                href={meeting.agenda_document_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:underline flex-1 truncate"
-              >
-                {meeting.agenda_document_name || "Agenda Document"}
-              </a>
-              <label className="flex items-center gap-1.5 text-sm text-blue-600 cursor-pointer hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 shrink-0">
-                <Upload size={14} />
-                Change Document
-                <input type="file" className="hidden" onChange={handleAgendaDocUpload} disabled={uploading} />
-              </label>
-              <button onClick={removeAgendaDoc} className="text-gray-400 hover:text-red-600 shrink-0" title="Remove">
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ) : (
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit">
-              <Upload size={16} />
-              Upload agenda document
-              <input type="file" className="hidden" onChange={handleAgendaDocUpload} disabled={uploading} />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">Agenda Documents</span>
+            <label className="flex items-center gap-1.5 text-sm text-blue-600 cursor-pointer hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5">
+              <Plus size={14} />
+              Add Document
+              <input type="file" className="hidden" onChange={(e) => handleAdditionalDocUpload(e, "agenda")} disabled={uploading} />
             </label>
-          )}
+          </div>
+          <div className="space-y-2">
+            {meeting.agenda_document_url && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <FileText size={16} className="text-blue-600 shrink-0" />
+                <a href={meeting.agenda_document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex-1 truncate">
+                  {meeting.agenda_document_name || "Agenda Document"}
+                </a>
+                <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-1 shrink-0">
+                  <Upload size={12} />
+                  Change
+                  <input type="file" className="hidden" onChange={handleAgendaDocUpload} disabled={uploading} />
+                </label>
+                <button onClick={removeAgendaDoc} className="text-gray-400 hover:text-red-600 shrink-0" title="Remove">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            )}
+            {meetingDocs.filter((d) => d.type === "agenda").map((doc) => (
+              <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <FileText size={16} className="text-blue-600 shrink-0" />
+                <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex-1 truncate">
+                  {doc.document_name}
+                </a>
+                <button onClick={() => deleteAdditionalDoc(doc.id)} className="text-gray-400 hover:text-red-600 shrink-0" title="Remove">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+            {!meeting.agenda_document_url && meetingDocs.filter((d) => d.type === "agenda").length === 0 && (
+              <p className="text-sm text-gray-400">No agenda documents uploaded yet.</p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3 mb-4">

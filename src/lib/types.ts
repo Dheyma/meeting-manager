@@ -52,6 +52,15 @@ export interface Decision {
   created_at: string;
 }
 
+export interface MeetingDocument {
+  id: string;
+  meeting_id: string;
+  type: "background" | "agenda";
+  document_url: string;
+  document_name: string;
+  created_at: string;
+}
+
 export interface ActionItem {
   id: string;
   meeting_id: string;
