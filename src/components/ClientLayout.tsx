@@ -48,7 +48,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <>
       <Toaster position="top-right" />
-      <nav className="bg-green-100 border-b border-green-200 pt-0 -mb-4 pb-3">
+      <nav className="bg-green-100 border-b border-green-200 pt-3 -mb-4 pb-3">
         <div className="flex items-center justify-between px-2">
           <Link href="/" className="flex items-center">
             <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={130} height={130} className="bg-green-100" unoptimized />
