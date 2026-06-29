@@ -193,7 +193,7 @@ export default function MeetingDetailPage({
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/MMS/api/upload", { method: "POST", body: formData });
       const data = await res.json();
 
       if (!res.ok) {
@@ -224,7 +224,7 @@ export default function MeetingDetailPage({
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/MMS/api/upload", { method: "POST", body: formData });
       const data = await res.json();
 
       if (!res.ok) {
@@ -266,7 +266,7 @@ export default function MeetingDetailPage({
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/MMS/api/upload", { method: "POST", body: formData });
       const data = await res.json();
 
       if (!res.ok) {
@@ -312,7 +312,7 @@ export default function MeetingDetailPage({
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/MMS/api/upload", { method: "POST", body: formData });
       const data = await res.json();
 
       if (!res.ok) {
@@ -387,7 +387,7 @@ export default function MeetingDetailPage({
     }
 
     try {
-      const res = await fetch("/api/email", {
+      const res = await fetch("/MMS/api/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
