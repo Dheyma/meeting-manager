@@ -765,7 +765,7 @@ export default function MeetingDetailPage({
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Background Document</h2>
         {meeting.background_document_url ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <FileText size={18} className="text-blue-600 shrink-0" />
             <a
               href={meeting.background_document_url}
@@ -775,14 +775,14 @@ export default function MeetingDetailPage({
             >
               {meeting.background_document_name || "Background Document"}
             </a>
-            <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-1">
-              <Upload size={13} />
-              Replace
+            <label className="flex items-center gap-1.5 text-sm text-blue-600 cursor-pointer hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 shrink-0">
+              <Upload size={14} />
+              Change Document
               <input type="file" className="hidden" onChange={handleBackgroundDocUpload} disabled={uploading} />
             </label>
             <button
               onClick={removeBackgroundDoc}
-              className="text-gray-400 hover:text-red-600"
+              className="text-gray-400 hover:text-red-600 shrink-0"
               title="Remove document"
             >
               <Trash2 size={16} />
@@ -813,12 +813,12 @@ export default function MeetingDetailPage({
               >
                 {meeting.agenda_document_name || "Agenda Document"}
               </a>
-              <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-1">
-                <Upload size={13} />
-                Replace
+              <label className="flex items-center gap-1.5 text-sm text-blue-600 cursor-pointer hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5 shrink-0">
+                <Upload size={14} />
+                Change Document
                 <input type="file" className="hidden" onChange={handleAgendaDocUpload} disabled={uploading} />
               </label>
-              <button onClick={removeAgendaDoc} className="text-gray-400 hover:text-red-600" title="Remove">
+              <button onClick={removeAgendaDoc} className="text-gray-400 hover:text-red-600 shrink-0" title="Remove">
                 <Trash2 size={16} />
               </button>
             </div>
