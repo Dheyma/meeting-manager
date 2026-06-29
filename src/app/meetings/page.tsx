@@ -187,10 +187,10 @@ export default function MeetingsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Meetings</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Meetings</h1>
         <Link
           href="/meetings/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 text-sm md:text-base"
         >
           <Plus size={18} />
           New Meeting
@@ -198,7 +198,7 @@ export default function MeetingsPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Search size={18} className="text-gray-400" />
           <select
             value={searchField}
@@ -277,7 +277,7 @@ export default function MeetingsPage() {
           <Link
             key={meeting.id}
             href={`/meetings/${meeting.id}`}
-            className="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            className="block bg-white border border-gray-200 rounded-lg p-4 md:p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -287,7 +287,7 @@ export default function MeetingsPage() {
                 {meeting.description && (
                   <p className="text-gray-600 mt-1">{meeting.description}</p>
                 )}
-                <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <Calendar size={14} />
                     {format(new Date(meeting.date), "dd/MM/yyyy HH:mm")}

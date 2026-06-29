@@ -58,16 +58,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
-      <div className="mb-6 flex flex-col items-center">
-        <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={160} height={160} className="rounded" />
-        <h1 className="text-2xl font-bold mt-2" style={{ color: "#B8860B" }}>
+    <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center px-4">
+      <div className="mb-6 flex flex-col items-center text-center">
+        <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={120} height={120} className="rounded w-24 h-24 md:w-40 md:h-40" unoptimized />
+        <h1 className="text-xl md:text-2xl font-bold mt-2" style={{ color: "#B8860B" }}>
           Dheyma Global Ventures Pvt. Ltd.
         </h1>
         <p className="text-gray-600 text-sm mt-1">Meeting Management System</p>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-sm shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 md:p-8 w-full max-w-sm shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-5">Sign In</h2>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

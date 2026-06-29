@@ -158,14 +158,14 @@ export default function SystemLogPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">System Log</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">System Log</h1>
           <p className="text-sm text-gray-500 mt-1">Real-time audit trail of all user activity</p>
         </div>
         <span className="text-sm text-gray-400">{filtered.length} entries</span>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-5 mb-4 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-4 text-xs text-gray-500">
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-400 inline-block" /> Login / Logout</span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-400 inline-block" /> Added / Created / Uploaded</span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-yellow-400 inline-block" /> Edited / Changed</span>
@@ -196,7 +196,8 @@ export default function SystemLogPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-44">Date &amp; Time</th>
@@ -227,6 +228,7 @@ export default function SystemLogPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

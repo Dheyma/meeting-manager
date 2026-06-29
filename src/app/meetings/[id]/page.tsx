@@ -646,16 +646,16 @@ export default function MeetingDetailPage({
   return (
     <div className="space-y-8">
       {/* Meeting Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
               {meeting.title}
             </h1>
             {meeting.description && (
               <p className="text-gray-600 mt-1">{meeting.description}</p>
             )}
-            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-500">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {format(new Date(meeting.date), "dd/MM/yyyy HH:mm")}
@@ -744,8 +744,8 @@ export default function MeetingDetailPage({
 
       {/* Reschedule Modal */}
       {rescheduling && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg p-5 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Reschedule Meeting</h2>
               <button onClick={() => setRescheduling(false)} className="text-gray-400 hover:text-gray-600">
@@ -776,8 +776,8 @@ export default function MeetingDetailPage({
 
       {/* Edit Modal */}
       {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Edit Meeting</h2>
               <button onClick={() => setEditing(false)} className="text-gray-400 hover:text-gray-600">

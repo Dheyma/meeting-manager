@@ -89,9 +89,9 @@ export default function Home() {
         Manage your meetings, track attendance, and follow up on action items.
       </p>
 
-      <div className="flex gap-8">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Calendar */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 w-96 shrink-0">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 w-full lg:w-96 lg:shrink-0">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}

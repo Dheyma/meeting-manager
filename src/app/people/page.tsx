@@ -148,10 +148,10 @@ export default function PeoplePage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">People</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">People</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 text-sm md:text-base"
         >
           <Plus size={18} />
           Add Person
@@ -196,7 +196,7 @@ export default function PeoplePage() {
       {/* Edit Person Modal */}
       {editingPerson && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+          <div className="bg-white rounded-lg p-5 w-full max-w-lg mx-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Edit Person</h2>
               <button onClick={() => setEditingPerson(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
@@ -234,7 +234,7 @@ export default function PeoplePage() {
       {/* Change Password Modal */}
       {changePwdPerson && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+          <div className="bg-white rounded-lg p-5 w-full max-w-sm mx-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
               <button onClick={() => { setChangePwdPerson(null); setCurrentPwd(""); setNewPwd(""); setConfirmPwd(""); }} className="text-gray-400 hover:text-gray-600">
@@ -266,7 +266,8 @@ export default function PeoplePage() {
 
       <p className="text-sm text-gray-500 italic mb-3">(Default password is 1234 until user changes it to a custom one)</p>
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Sl #</th>
@@ -320,6 +321,7 @@ export default function PeoplePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
