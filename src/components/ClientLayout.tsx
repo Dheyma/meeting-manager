@@ -48,10 +48,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <>
       <Toaster position="top-right" />
-      <nav className="bg-green-100 border-b border-green-200 pt-3 -mb-4 pb-3">
+      <nav className="bg-blue-100 border-b border-blue-200 pt-3 -mb-4 pb-3">
         <div className="flex items-center justify-between px-2">
           <Link href="/" className="flex items-center">
-            <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={130} height={130} className="bg-green-100" unoptimized />
+            <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={130} height={130} className="bg-blue-100" unoptimized />
             <div className="flex flex-col ml-3">
               <span className="text-4xl font-bold" style={{ color: "#bea064" }}>
                 Dheyma Global Ventures Pvt. Ltd.
@@ -78,7 +78,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               <ClipboardList size={18} />
               System Log
             </Link>
-            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-green-300">
+            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-blue-300">
               <span className="text-sm font-medium text-gray-700">{user?.name}</span>
               <button
                 onClick={logout}
