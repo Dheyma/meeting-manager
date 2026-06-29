@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Meeting } from "@/lib/types";
 import Link from "next/link";
-import { Plus, Calendar, MapPin, Building2, Search, X } from "lucide-react";
+import { Plus, Calendar, MapPin, Building2, Search, X, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -21,6 +21,8 @@ export default function MeetingsPage() {
   const [actionMap, setActionMap] = useState<Record<string, string>>({});
   const [searchField, setSearchField] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  const [sortField, setSortField] = useState<"date" | "title" | "department">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     fetchMeetings();
@@ -134,6 +136,29 @@ export default function MeetingsPage() {
     });
   }, [searchField, searchValue, meetings, attendeeMap, agendaMap, decisionMap, actionMap]);
 
+  const sortedMeetings = useMemo(() => {
+    return [...filteredMeetings].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "date") {
+        cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (sortField === "title") {
+        cmp = a.title.localeCompare(b.title);
+      } else if (sortField === "department") {
+        cmp = (a.department || "").localeCompare(b.department || "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [filteredMeetings, sortField, sortDir]);
+
+  function toggleSort(field: "date" | "title" | "department") {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "date" ? "desc" : "asc");
+    }
+  }
+
   function clearSearch() {
     setSearchField("");
     setSearchValue("");
@@ -211,10 +236,30 @@ export default function MeetingsPage() {
             Showing {filteredMeetings.length} meeting{filteredMeetings.length !== 1 ? "s" : ""} matching {searchField}: &quot;{searchValue}&quot;
           </p>
         )}
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-gray-100">
+          <span className="text-xs text-gray-500 mr-2">Sort by</span>
+          {(["date", "title", "department"] as const).map((field) => {
+            const active = sortField === field;
+            return (
+              <button
+                key={field}
+                onClick={() => toggleSort(field)}
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  active
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
+                }`}
+              >
+                {field.charAt(0).toUpperCase() + field.slice(1)}
+                {active && (sortDir === "asc" ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="space-y-4">
-        {filteredMeetings.map((meeting) => (
+        {sortedMeetings.map((meeting) => (
           <Link
             key={meeting.id}
             href={`/meetings/${meeting.id}`}
@@ -255,7 +300,7 @@ export default function MeetingsPage() {
             </div>
           </Link>
         ))}
-        {filteredMeetings.length === 0 && (
+        {sortedMeetings.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             {searchValue ? "No meetings match your search." : "No meetings yet. Create your first meeting to get started."}
           </div>
