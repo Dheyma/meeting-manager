@@ -19,6 +19,7 @@ export default function MeetingsPage() {
   const [agendaMap, setAgendaMap] = useState<Record<string, string>>({});
   const [decisionMap, setDecisionMap] = useState<Record<string, string>>({});
   const [actionMap, setActionMap] = useState<Record<string, string>>({});
+  const [peopleMap, setPeopleMap] = useState<Record<string, string>>({});
   const [searchField, setSearchField] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [sortField, setSortField] = useState<"date" | "title" | "department">("date");
@@ -40,12 +41,13 @@ export default function MeetingsPage() {
   }, []);
 
   async function fetchMeetings() {
-    const [meetingsRes, attendeesRes, agendaRes, decisionsRes, actionsRes] = await Promise.all([
+    const [meetingsRes, attendeesRes, agendaRes, decisionsRes, actionsRes, peopleRes] = await Promise.all([
       supabase.from("meetings").select("*").order("date", { ascending: false }),
       supabase.from("meeting_attendees").select("meeting_id, person:people(name)"),
       supabase.from("agenda_items").select("meeting_id, title, description"),
       supabase.from("decisions").select("meeting_id, description"),
       supabase.from("action_items").select("meeting_id, description"),
+      supabase.from("people").select("id, name, organization"),
     ]);
     if (meetingsRes.error) {
       toast.error("Failed to load meetings");
@@ -79,6 +81,12 @@ export default function MeetingsPage() {
       acMap[r.meeting_id] = (acMap[r.meeting_id] || "") + " " + r.description;
     }
     setActionMap(acMap);
+
+    const pMap: Record<string, string> = {};
+    for (const p of (peopleRes.data || []) as { id: string; name: string; organization?: string }[]) {
+      pMap[p.id] = p.name + (p.organization ? `, ${p.organization}` : "");
+    }
+    setPeopleMap(pMap);
   }
 
   const searchOptions = useMemo(() => {
@@ -98,10 +106,13 @@ export default function MeetingsPage() {
       } else if (searchField === "attendees") {
         const names = attendeeMap[m.id] || [];
         for (const n of names) opts.add(n);
+      } else if (searchField === "transcribed_by" && m.transcribed_by) {
+        const name = peopleMap[m.transcribed_by];
+        if (name) opts.add(name);
       }
     }
     return Array.from(opts).sort();
-  }, [searchField, meetings, attendeeMap]);
+  }, [searchField, meetings, attendeeMap, peopleMap]);
 
   const filteredMeetings = useMemo(() => {
     if (!searchField || !searchValue) return meetings;
@@ -118,6 +129,8 @@ export default function MeetingsPage() {
         return m.department === searchValue;
       } else if (searchField === "attendees") {
         return (attendeeMap[m.id] || []).includes(searchValue);
+      } else if (searchField === "transcribed_by") {
+        return m.transcribed_by ? peopleMap[m.transcribed_by] === searchValue : false;
       } else if (searchField === "keyword") {
         const kw = searchValue.toLowerCase();
         const attendeeNames = (attendeeMap[m.id] || []).join(" ").toLowerCase();
@@ -134,7 +147,7 @@ export default function MeetingsPage() {
       }
       return true;
     });
-  }, [searchField, searchValue, meetings, attendeeMap, agendaMap, decisionMap, actionMap]);
+  }, [searchField, searchValue, meetings, attendeeMap, agendaMap, decisionMap, actionMap, peopleMap]);
 
   const sortedMeetings = useMemo(() => {
     return [...filteredMeetings].sort((a, b) => {
@@ -200,6 +213,7 @@ export default function MeetingsPage() {
             <option value="location">Location</option>
             <option value="department">Department</option>
             <option value="attendees">Attendees</option>
+            <option value="transcribed_by">Transcribed By</option>
           </select>
           {searchField === "keyword" ? (
             <input
