@@ -339,7 +339,12 @@ export default function PeoplePage() {
                     <button onClick={() => { setChangePwdPerson(person); setCurrentPwd(""); setNewPwd(""); setConfirmPwd(""); }} className="text-gray-400 hover:text-yellow-600" title="Change Password">
                       <KeyRound size={16} />
                     </button>
-                    <button onClick={() => handleDelete(person.id)} className="text-gray-400 hover:text-red-600" title="Delete">
+                    <button
+                      onClick={() => isAdmin && handleDelete(person.id)}
+                      disabled={!isAdmin}
+                      title={isAdmin ? "Delete person" : "Only the system administrator can delete a person"}
+                      className={`${isAdmin ? "text-gray-400 hover:text-red-600 cursor-pointer" : "text-gray-200 cursor-not-allowed"}`}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
