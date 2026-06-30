@@ -92,6 +92,11 @@ export default function NewMeetingPage() {
     e.preventDefault();
     setSubmitting(true);
 
+    // Auto-capture any agenda item left in the input without clicking "+"
+    const finalAgendaItems = agendaItemTitle.trim()
+      ? [...agendaItems, { title: agendaItemTitle.trim(), description: agendaItemDescription.trim() }]
+      : agendaItems;
+
     try {
       const { data: meeting, error } = await supabase
         .from("meetings")
@@ -150,9 +155,9 @@ export default function NewMeetingPage() {
       }
 
       // Agenda items
-      if (agendaItems.length > 0) {
+      if (finalAgendaItems.length > 0) {
         const { error: itemsErr } = await supabase.from("agenda_items").insert(
-          agendaItems.map((item, i) => ({
+          finalAgendaItems.map((item, i) => ({
             meeting_id: meeting.id,
             title: item.title,
             description: item.description || null,
