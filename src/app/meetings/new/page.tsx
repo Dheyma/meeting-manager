@@ -108,43 +108,50 @@ export default function NewMeetingPage() {
         .select()
         .single();
 
-      if (error) {
-        toast.error(error.message);
+      if (error || !meeting) {
+        toast.error(error?.message ?? "Failed to create meeting");
         return;
       }
 
       // Attendees
       if (selectedAttendees.length > 0) {
-        await supabase.from("meeting_attendees").insert(
+        const { error: attErr } = await supabase.from("meeting_attendees").insert(
           selectedAttendees.map((personId) => ({ meeting_id: meeting.id, person_id: personId }))
         );
+        if (attErr) toast.error("Attendees: " + attErr.message);
       }
 
-      // Background document upload
+      // Background document — insert into meeting_documents (same as detail page)
       if (backgroundFile) {
         const result = await uploadFile(backgroundFile);
         if (result) {
-          await supabase
-            .from("meetings")
-            .update({ background_document_url: result.url, background_document_name: result.name })
-            .eq("id", meeting.id);
+          const { error: bgErr } = await supabase.from("meeting_documents").insert({
+            meeting_id: meeting.id,
+            type: "background",
+            document_url: result.url,
+            document_name: result.name,
+          });
+          if (bgErr) toast.error("Background doc: " + bgErr.message);
         }
       }
 
-      // Agenda document upload
+      // Agenda document — insert into meeting_documents
       if (agendaFile) {
         const result = await uploadFile(agendaFile);
         if (result) {
-          await supabase
-            .from("meetings")
-            .update({ agenda_document_url: result.url, agenda_document_name: result.name })
-            .eq("id", meeting.id);
+          const { error: agdErr } = await supabase.from("meeting_documents").insert({
+            meeting_id: meeting.id,
+            type: "agenda",
+            document_url: result.url,
+            document_name: result.name,
+          });
+          if (agdErr) toast.error("Agenda doc: " + agdErr.message);
         }
       }
 
       // Agenda items
       if (agendaItems.length > 0) {
-        await supabase.from("agenda_items").insert(
+        const { error: itemsErr } = await supabase.from("agenda_items").insert(
           agendaItems.map((item, i) => ({
             meeting_id: meeting.id,
             title: item.title,
@@ -152,6 +159,7 @@ export default function NewMeetingPage() {
             sort_order: i,
           }))
         );
+        if (itemsErr) toast.error("Agenda items: " + itemsErr.message);
       }
 
       await logAction("Created meeting", "meeting", title);
