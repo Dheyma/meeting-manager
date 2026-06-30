@@ -86,7 +86,7 @@ export default function Home() {
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
       <p className="text-gray-600 mb-8">
-        Manage your meetings, track attendance, and follow up on action items.
+        Manage your meetings, meeting participants, agenda and follow up on action items.
       </p>
 
       <div className="flex flex-col lg:flex-row gap-6">
