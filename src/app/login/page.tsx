@@ -29,6 +29,7 @@ export default function LoginPage() {
     supabase
       .from("people")
       .select("id, name, organization")
+      .eq("can_login", true)
       .order("name")
       .then(({ data }) => {
         if (data) setPeople(data as PersonOption[]);

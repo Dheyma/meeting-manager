@@ -6,10 +6,14 @@ import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Pencil, X, ArrowUp, ArrowDown, KeyRound } from "lucide-react";
 import { logAction } from "@/lib/log";
+import { getStoredUser } from "@/lib/auth";
+
+const ADMIN_NAME = "sunil rasaily";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [name, setName] = useState("");
   const [designation, setDesignation] = useState("");
   const [email, setEmail] = useState("");
@@ -33,6 +37,8 @@ export default function PeoplePage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
+    const user = getStoredUser();
+    setIsAdmin(user?.name?.toLowerCase() === ADMIN_NAME);
     fetchPeople();
     const channel = supabase
       .channel("people-changes")
@@ -44,10 +50,27 @@ export default function PeoplePage() {
   async function fetchPeople() {
     const { data, error } = await supabase
       .from("people")
-      .select("id, name, designation, email, phone, organization, created_at")
+      .select("id, name, designation, email, phone, organization, can_login, created_at")
       .order("name");
     if (error) { toast.error("Failed to load people"); return; }
     setPeople(data || []);
+  }
+
+  async function toggleLoginAccess(person: Person) {
+    if (!isAdmin) return;
+    const newVal = !person.can_login;
+    const { error } = await supabase
+      .from("people")
+      .update({ can_login: newVal })
+      .eq("id", person.id);
+    if (error) { toast.error("Failed to update login access"); return; }
+    await logAction(
+      newVal ? "Granted login access" : "Revoked login access",
+      "person",
+      person.name
+    );
+    toast.success(newVal ? `Login access granted to ${person.name}` : `Login access revoked for ${person.name}`);
+    fetchPeople();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -285,6 +308,7 @@ export default function PeoplePage() {
                   </div>
                 </th>
               ))}
+              <th className="text-center px-6 py-3 text-sm font-medium text-gray-500">Login Access</th>
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
@@ -297,6 +321,16 @@ export default function PeoplePage() {
                 <td className="px-6 py-4 text-sm text-gray-600">{person.organization || "—"}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{person.email}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{person.phone || "—"}</td>
+                <td className="px-6 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={!!person.can_login}
+                    onChange={() => toggleLoginAccess(person)}
+                    disabled={!isAdmin}
+                    title={isAdmin ? (person.can_login ? "Revoke login access" : "Grant login access") : "Only the system administrator can change login access"}
+                    className={`w-4 h-4 rounded ${isAdmin ? "cursor-pointer accent-blue-600" : "cursor-not-allowed opacity-40"}`}
+                  />
+                </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={() => openEdit(person)} className="text-gray-400 hover:text-blue-600" title="Edit">
@@ -314,7 +348,7 @@ export default function PeoplePage() {
             ))}
             {people.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                   No people added yet. Click &quot;Add Person&quot; to get started.
                 </td>
               </tr>

@@ -6,6 +6,7 @@ export interface Person {
   phone?: string;
   organization?: string;
   password?: string;
+  can_login: boolean;
   created_at: string;
 }
 
