@@ -31,6 +31,7 @@ import {
   X,
   Building2,
   CalendarClock,
+  Mail,
 } from "lucide-react";
 
 export default function MeetingDetailPage({
@@ -641,6 +642,45 @@ export default function MeetingDetailPage({
     fetchAll();
   }
 
+  async function sendInvite(attendee: MeetingAttendee) {
+    if (!meeting || !attendee.person?.email) {
+      toast.error("This attendee has no email address on record");
+      return;
+    }
+
+    const requestedByPerson = people.find((p) => p.id === meeting.requested_by);
+
+    try {
+      const res = await fetch("/MMS/api/email-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: attendee.person.email,
+          attendeeName: attendee.person.name,
+          meeting: {
+            title: meeting.title,
+            date: meeting.date,
+            location: meeting.location,
+            department: meeting.department,
+            description: meeting.description,
+            requestedByName: requestedByPerson?.name ?? null,
+          },
+          agendaItems: agendaItems.map((i) => ({ title: i.title, description: i.description ?? null })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "Failed to send invite"); return; }
+
+      await supabase.from("meeting_attendees").update({ invite_sent: true }).eq("id", attendee.id);
+      await logAction("Sent meeting invite", "meeting", `${attendee.person.name} for meeting: ${meeting.title}`);
+      toast.success(`Invite sent to ${attendee.person.name}`);
+      fetchAll();
+    } catch {
+      toast.error("Failed to send invite");
+    }
+  }
+
   async function sendMeetingRecordsEmail() {
     if (!meeting) return;
     setEmailMeetingStatus("sending");
@@ -1010,26 +1050,49 @@ export default function MeetingDetailPage({
 
       {/* Attendees */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Attendees
-        </h2>
-        {attendees.length === 0 ? (
-          <p className="text-sm text-gray-500">No attendees added.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {attendees.map((attendee, index) => (
-              <div
-                key={attendee.id}
-                className="flex items-center gap-3 p-2 rounded"
-              >
-                <span className="text-sm font-medium text-gray-500 w-6">{index + 1}.</span>
-                <span className="text-sm text-gray-900">
-                  {attendee.person?.name}{attendee.person?.organization ? `, ${attendee.person.organization}` : ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Attendees</h2>
+        {(() => {
+          const canSendInvite =
+            (meeting.status === "scheduled" || meeting.status === "in_progress") &&
+            new Date(meeting.date) > new Date();
+          return attendees.length === 0 ? (
+            <p className="text-sm text-gray-500">No attendees added.</p>
+          ) : (
+            <div className="space-y-1">
+              {attendees.map((attendee, index) => (
+                <div key={attendee.id} className="flex items-center justify-between gap-3 p-2 rounded hover:bg-gray-50">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-sm font-medium text-gray-500 w-6 shrink-0">{index + 1}.</span>
+                    <span className="text-sm text-gray-900 truncate">
+                      {attendee.person?.name}{attendee.person?.organization ? `, ${attendee.person.organization}` : ""}
+                    </span>
+                  </div>
+                  {canSendInvite && (
+                    <div className="shrink-0">
+                      {attendee.invite_sent ? (
+                        <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                          <CheckCircle size={13} />
+                          Invite sent
+                        </span>
+                      ) : attendee.person?.email ? (
+                        <button
+                          onClick={() => sendInvite(attendee)}
+                          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+                          title="Send meeting invite by email"
+                        >
+                          <Mail size={13} />
+                          Send Invite
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">No email</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Background Document */}

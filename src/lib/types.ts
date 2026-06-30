@@ -33,6 +33,7 @@ export interface MeetingAttendee {
   meeting_id: string;
   person_id: string;
   attended: boolean;
+  invite_sent: boolean;
   person?: Person;
 }
 
