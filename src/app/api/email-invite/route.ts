@@ -3,6 +3,53 @@ import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
+function toIcsDate(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function escapeIcs(str: string): string {
+  return str.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+function buildIcs(params: {
+  uid: string;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  startDate: Date;
+  endDate: Date;
+  organizerEmail: string;
+  attendeeEmail: string;
+  attendeeName: string;
+}): string {
+  const now = toIcsDate(new Date());
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Dheyma Global Ventures//Meeting Manager//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:REQUEST",
+    "BEGIN:VEVENT",
+    `UID:${params.uid}`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${toIcsDate(params.startDate)}`,
+    `DTEND:${toIcsDate(params.endDate)}`,
+    `SUMMARY:${escapeIcs(params.title)}`,
+    params.description ? `DESCRIPTION:${escapeIcs(params.description)}` : null,
+    params.location ? `LOCATION:${escapeIcs(params.location)}` : null,
+    `ORGANIZER;CN=Meeting Manager:mailto:${params.organizerEmail}`,
+    `ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=TRUE;CN=${escapeIcs(params.attendeeName)}:mailto:${params.attendeeEmail}`,
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+
+  return lines;
+}
+
 export async function POST(request: NextRequest) {
   const { to, attendeeName, meeting, agendaItems } = await request.json();
 
@@ -10,7 +57,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const dateStr = new Date(meeting.date).toLocaleString("en-GB", {
+  const startDate = new Date(meeting.date);
+  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // default 1 hour
+
+  const dateStr = startDate.toLocaleString("en-GB", {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -62,7 +112,7 @@ export async function POST(request: NextRequest) {
 
   <div style="padding:20px 32px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;">
     <p style="margin:0 0 14px;font-size:14px;">Dear <strong>${attendeeName}</strong>,</p>
-    <p style="margin:0 0 14px;font-size:14px;">You are invited to attend the following meeting:</p>
+    <p style="margin:0 0 14px;font-size:14px;">You are invited to attend the following meeting. A calendar invite is attached — open the attachment to add it directly to your calendar.</p>
     <table style="border-collapse:collapse;">${metaRows}</table>
     ${meeting.description ? `<p style="margin:12px 0 0;font-size:13px;color:#374151;font-style:italic;">${meeting.description}</p>` : ""}
   </div>
@@ -74,6 +124,18 @@ export async function POST(request: NextRequest) {
   </div>
 </div>`;
 
+  const icsContent = buildIcs({
+    uid: `${meeting.id || Date.now()}@dheymabhutan.com`,
+    title: meeting.title,
+    description: meeting.description,
+    location: meeting.location,
+    startDate,
+    endDate,
+    organizerEmail: "noreply@dheymabhutan.com",
+    attendeeEmail: to,
+    attendeeName,
+  });
+
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const { error } = await resend.emails.send({
@@ -81,6 +143,12 @@ export async function POST(request: NextRequest) {
       to: [to],
       subject: `Meeting Invitation: ${meeting.title}`,
       html,
+      attachments: [
+        {
+          filename: "invite.ics",
+          content: Buffer.from(icsContent).toString("base64"),
+        },
+      ],
     });
 
     if (error) {

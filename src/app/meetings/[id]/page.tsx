@@ -658,6 +658,7 @@ export default function MeetingDetailPage({
           to: attendee.person.email,
           attendeeName: attendee.person.name,
           meeting: {
+            id: meeting.id,
             title: meeting.title,
             date: meeting.date,
             location: meeting.location,
