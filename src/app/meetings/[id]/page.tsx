@@ -1197,10 +1197,22 @@ export default function MeetingDetailPage({
                   {canSendInvite && (
                     <div className="shrink-0">
                       {attendee.invite_sent ? (
-                        <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                          <CheckCircle size={13} />
-                          Invite sent
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                            <CheckCircle size={13} />
+                            Invite sent
+                          </span>
+                          {attendee.person?.email && (
+                            <button
+                              onClick={() => sendInvite(attendee)}
+                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+                              title="Resend meeting invite"
+                            >
+                              <Mail size={13} />
+                              Resend
+                            </button>
+                          )}
+                        </div>
                       ) : attendee.person?.email ? (
                         <button
                           onClick={() => sendInvite(attendee)}
