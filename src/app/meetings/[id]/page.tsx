@@ -100,6 +100,8 @@ export default function MeetingDetailPage({
   const { allDepartments, addDepartment } = useDepartments();
   const [editRequestedBy, setEditRequestedBy] = useState("");
   const [editAttendees, setEditAttendees] = useState<string[]>([]);
+  const [editBackgroundFile, setEditBackgroundFile] = useState<File | null>(null);
+  const [editAgendaFile, setEditAgendaFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -488,6 +490,8 @@ export default function MeetingDetailPage({
     setEditStatus(meeting.status);
     setEditRequestedBy(meeting.requested_by || "");
     setEditAttendees(attendees.map((a) => a.person_id));
+    setEditBackgroundFile(null);
+    setEditAgendaFile(null);
     setEditing(true);
   }
 
@@ -536,6 +540,50 @@ export default function MeetingDetailPage({
       await supabase.from("meeting_attendees").insert(
         toAdd.map((personId) => ({ meeting_id: id, person_id: personId }))
       );
+    }
+
+    // Background document upload
+    if (editBackgroundFile) {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", editBackgroundFile);
+      try {
+        const res = await fetch("/MMS/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          await supabase.from("meeting_documents").insert({
+            meeting_id: id, type: "background",
+            document_url: data.url, document_name: data.name,
+          });
+        } else {
+          toast.error("Background doc upload failed");
+        }
+      } finally {
+        setUploading(false);
+        setEditBackgroundFile(null);
+      }
+    }
+
+    // Agenda document upload
+    if (editAgendaFile) {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", editAgendaFile);
+      try {
+        const res = await fetch("/MMS/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          await supabase.from("meeting_documents").insert({
+            meeting_id: id, type: "agenda",
+            document_url: data.url, document_name: data.name,
+          });
+        } else {
+          toast.error("Agenda doc upload failed");
+        }
+      } finally {
+        setUploading(false);
+        setEditAgendaFile(null);
+      }
     }
 
     setEditing(false);
@@ -1029,12 +1077,90 @@ export default function MeetingDetailPage({
                   </div>
                 )}
               </div>
+              {/* Background Document */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Background Document</label>
+                {/* existing docs */}
+                {(meeting.background_document_url || meetingDocs.filter(d => d.type === "background").length > 0) && (
+                  <div className="space-y-1 mb-2">
+                    {meeting.background_document_url && (
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <FileText size={14} className="text-blue-600 shrink-0" />
+                        <a href={meeting.background_document_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">{meeting.background_document_name || "Background Document"}</a>
+                      </div>
+                    )}
+                    {meetingDocs.filter(d => d.type === "background").map(doc => (
+                      <div key={doc.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <FileText size={14} className="text-blue-600 shrink-0" />
+                        <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">{doc.document_name}</a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {editBackgroundFile ? (
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <FileText size={14} className="text-blue-600 shrink-0" />
+                    <span className="text-xs text-gray-700 flex-1 truncate">{editBackgroundFile.name}</span>
+                    <label className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-0.5">
+                      Change
+                      <input type="file" className="hidden" onChange={(e) => setEditBackgroundFile(e.target.files?.[0] || null)} />
+                    </label>
+                    <button type="button" onClick={() => setEditBackgroundFile(null)} className="text-gray-400 hover:text-red-600"><X size={14} /></button>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-2 w-fit cursor-pointer text-sm text-blue-600 hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5">
+                    <Upload size={14} />
+                    Upload Background Document
+                    <input type="file" className="hidden" onChange={(e) => setEditBackgroundFile(e.target.files?.[0] || null)} />
+                  </label>
+                )}
+              </div>
+
+              {/* Agenda Document */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Agenda Document</label>
+                {(meeting.agenda_document_url || meetingDocs.filter(d => d.type === "agenda").length > 0) && (
+                  <div className="space-y-1 mb-2">
+                    {meeting.agenda_document_url && (
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <FileText size={14} className="text-blue-600 shrink-0" />
+                        <a href={meeting.agenda_document_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">{meeting.agenda_document_name || "Agenda Document"}</a>
+                      </div>
+                    )}
+                    {meetingDocs.filter(d => d.type === "agenda").map(doc => (
+                      <div key={doc.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <FileText size={14} className="text-blue-600 shrink-0" />
+                        <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">{doc.document_name}</a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {editAgendaFile ? (
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <FileText size={14} className="text-blue-600 shrink-0" />
+                    <span className="text-xs text-gray-700 flex-1 truncate">{editAgendaFile.name}</span>
+                    <label className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 border border-gray-300 rounded px-2 py-0.5">
+                      Change
+                      <input type="file" className="hidden" onChange={(e) => setEditAgendaFile(e.target.files?.[0] || null)} />
+                    </label>
+                    <button type="button" onClick={() => setEditAgendaFile(null)} className="text-gray-400 hover:text-red-600"><X size={14} /></button>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-2 w-fit cursor-pointer text-sm text-blue-600 hover:text-blue-800 border border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-1.5">
+                    <Upload size={14} />
+                    Upload Agenda Document
+                    <input type="file" className="hidden" onChange={(e) => setEditAgendaFile(e.target.files?.[0] || null)} />
+                  </label>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                  disabled={uploading}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Save Changes
+                  {uploading ? "Uploading…" : "Save Changes"}
                 </button>
                 <button
                   type="button"
