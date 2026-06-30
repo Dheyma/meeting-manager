@@ -52,7 +52,7 @@ export default function LoginPage() {
 
       await logActionAs(data.id, data.name, "Logged in", "auth");
       setStoredUser({ personId: data.id, name: data.name });
-      router.replace("/meetings");
+      router.replace("/");
     } finally {
       setLoading(false);
     }
