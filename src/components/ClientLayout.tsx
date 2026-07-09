@@ -7,7 +7,7 @@ import { logActionAs } from "@/lib/log";
 import Link from "next/link";
 import Image from "next/image";
 import { Toaster } from "react-hot-toast";
-import { CalendarDays, Users, Home, LogOut, ClipboardList, Menu, X } from "lucide-react";
+import { CalendarDays, Users, Home, LogOut, ClipboardList, ListChecks, Menu, X } from "lucide-react";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -53,6 +53,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const navLinks = [
     { href: "/", icon: <Home size={18} />, label: "Dashboard" },
     { href: "/meetings", icon: <CalendarDays size={18} />, label: "Meetings" },
+    { href: "/action-items", icon: <ListChecks size={18} />, label: "Action Items" },
     { href: "/people", icon: <Users size={18} />, label: "People" },
     { href: "/system-log", icon: <ClipboardList size={18} />, label: "System Log" },
   ];

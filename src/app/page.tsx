@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Meeting, ActionItem, Person } from "@/lib/types";
-import { CalendarDays, Users, ClipboardList, CheckCircle, Circle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Meeting, ActionItem } from "@/lib/types";
+import { CalendarDays, Users, ClipboardList, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   startOfMonth,
   endOfMonth,
@@ -25,7 +25,6 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [actionItems, setActionItems] = useState<(ActionItem & { meeting?: Meeting })[]>([]);
-  const [showActions, setShowActions] = useState(false);
 
   useEffect(() => {
     fetchMeetings();
@@ -218,50 +217,16 @@ export default function Home() {
               </p>
             </Link>
 
-            <div
-              className="bg-white rounded-lg border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setShowActions(!showActions)}
+            <Link
+              href="/action-items"
+              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
             >
               <CheckCircle className="text-orange-600 mb-3" size={32} />
               <h3 className="font-semibold text-gray-900">Action Items</h3>
               <p className="text-sm text-gray-500 mt-1">
                 {actionItems.length} pending
               </p>
-              {showActions && actionItems.length > 0 && (
-                <div className="space-y-2 mt-4 max-h-64 overflow-y-auto">
-                  {actionItems.map((action, index) => (
-                    <div
-                      key={action.id}
-                      className="flex items-start gap-2 p-2 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100"
-                      onClick={() => action.meeting && router.push(`/meetings/${action.meeting.id}`)}
-                    >
-                      <span className="text-xs font-medium text-gray-500 mt-0.5">{index + 1}.</span>
-                      {action.status === "completed" ? (
-                        <CheckCircle size={14} className="text-green-600 mt-0.5 shrink-0" />
-                      ) : (
-                        <Circle size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs ${action.status === "completed" ? "line-through text-gray-500" : "text-gray-900"}`}>
-                          {action.description}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-gray-500">
-                          {action.person && (
-                            <span>{action.person.name}{action.person.organization ? `, ${action.person.organization}` : ""}</span>
-                          )}
-                          {action.due_date && (
-                            <span>Due: {format(new Date(action.due_date), "dd/MM/yyyy")}</span>
-                          )}
-                          {action.meeting && (
-                            <span className="text-blue-600">{action.meeting.title}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            </Link>
           </div>
         </div>
       </div>
