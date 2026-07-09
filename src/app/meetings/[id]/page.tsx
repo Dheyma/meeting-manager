@@ -174,6 +174,10 @@ export default function MeetingDetailPage({
   }
 
   async function updateStatus(status: Meeting["status"]) {
+    if (status === "completed" && !meeting?.transcribed_by) {
+      toast.error("Please enter the Meeting Transcribed By field before closing this meeting");
+      return;
+    }
     await supabase.from("meetings").update({ status }).eq("id", id);
     await logAction(`Changed meeting status to "${status.replace("_", " ")}"`, "meeting", `Meeting: "${meeting?.title}"`);
     fetchAll();
@@ -518,6 +522,10 @@ export default function MeetingDetailPage({
 
   async function saveEdit(e: React.FormEvent) {
     e.preventDefault();
+    if (editStatus === "completed" && !meeting?.transcribed_by) {
+      toast.error("Please enter the Meeting Transcribed By field before closing this meeting");
+      return;
+    }
     const { error } = await supabase
       .from("meetings")
       .update({
