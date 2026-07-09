@@ -63,36 +63,36 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <Toaster position="top-right" />
       <nav className="bg-blue-200 border-b border-blue-300 md:-mb-4">
         {/* Main navbar row */}
-        <div className="flex items-center justify-between px-3 py-3 md:px-2 md:pt-6 md:pb-6">
+        <div className="flex items-center justify-between px-3 py-3 md:px-3 md:py-3">
           <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
             <Image
               src="/dheyma-logo.png"
               alt="Dheyma Logo"
               width={130}
               height={130}
-              className="bg-blue-200 w-14 h-14 md:w-[130px] md:h-[130px]"
+              className="bg-blue-200 w-14 h-14 md:w-20 md:h-20"
               unoptimized
             />
-            <div className="flex flex-col ml-2 md:ml-3">
-              <span className="text-base md:text-4xl font-bold leading-tight text-gray-900">
+            <div className="flex flex-col ml-2 md:ml-3 min-w-0">
+              <span className="text-base md:text-xl font-bold leading-tight text-gray-900 whitespace-nowrap">
                 <span className="md:hidden">Dheyma Global Ventures</span>
                 <span className="hidden md:inline">Dheyma Global Ventures Pvt. Ltd.</span>
               </span>
-              <span className="text-xs md:text-xl font-semibold text-gray-900">
+              <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
                 Meeting Management System
               </span>
             </div>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6 mr-8">
+          <div className="hidden md:flex items-center gap-3 mr-3">
             {navLinks.map(({ href, icon, label }) => (
-              <Link key={href} href={href} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <Link key={href} href={href} className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 whitespace-nowrap">
                 {icon}
                 {label}
               </Link>
             ))}
-            <div className="flex items-center gap-3 ml-2 pl-4 border-l border-blue-400">
+            <div className="flex items-center gap-2 ml-1 pl-3 border-l border-blue-400">
               <span className="text-sm font-medium text-gray-700">{user?.name}</span>
               <button
                 onClick={logout}
