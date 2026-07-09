@@ -74,11 +74,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               unoptimized
             />
             <div className="flex flex-col ml-2 md:ml-3 min-w-0">
-              <span className="text-base md:text-xl font-bold leading-tight text-gray-900 whitespace-nowrap">
+              <span className="text-base md:text-2xl font-bold leading-tight text-gray-900 whitespace-nowrap">
                 <span className="md:hidden">Dheyma Global Ventures</span>
                 <span className="hidden md:inline">Dheyma Global Ventures Pvt. Ltd.</span>
               </span>
-              <span className="text-xs md:text-sm font-semibold text-gray-900 whitespace-nowrap">
+              <span className="text-xs md:text-base font-semibold text-gray-900 whitespace-nowrap">
                 Meeting Management System
               </span>
             </div>
