@@ -1103,18 +1103,13 @@ export default function MeetingDetailPage({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Requested By</label>
-                <select
+                <PersonCombobox
+                  people={people}
                   value={editRequestedBy}
-                  onChange={(e) => setEditRequestedBy(e.target.value)}
+                  onChange={setEditRequestedBy}
+                  placeholder="Select person..."
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value="">Select person...</option>
-                  {people.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.name}{person.organization ? `, ${person.organization}` : ""}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Attendees</label>

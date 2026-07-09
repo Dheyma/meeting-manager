@@ -7,6 +7,7 @@ import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import DateTimePicker, { buildISODate } from "@/components/DateTimePicker";
 import AttendeePicker from "@/components/AttendeePicker";
+import PersonCombobox from "@/components/PersonCombobox";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
 import { Plus, Trash2, FileText, Upload, X } from "lucide-react";
@@ -304,18 +305,13 @@ export default function NewMeetingPage() {
         {/* Requested By */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Requested By</label>
-          <select
+          <PersonCombobox
+            people={people}
             value={requestedBy}
-            onChange={(e) => setRequestedBy(e.target.value)}
+            onChange={setRequestedBy}
+            placeholder="Select person..."
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
-          >
-            <option value="">Select person...</option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.name}{person.organization ? `, ${person.organization}` : ""}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         {/* Attendees */}
