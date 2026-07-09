@@ -178,6 +178,10 @@ export default function MeetingDetailPage({
       toast.error("Please enter the Meeting Transcribed By field before closing this meeting");
       return;
     }
+    if (status === "completed" && actionItems.some((a) => !a.assigned_to)) {
+      toast.error("Please assign every action item to a person before closing this meeting");
+      return;
+    }
     await supabase.from("meetings").update({ status }).eq("id", id);
     await logAction(`Changed meeting status to "${status.replace("_", " ")}"`, "meeting", `Meeting: "${meeting?.title}"`);
     fetchAll();
@@ -524,6 +528,10 @@ export default function MeetingDetailPage({
     e.preventDefault();
     if (editStatus === "completed" && !meeting?.transcribed_by) {
       toast.error("Please enter the Meeting Transcribed By field before closing this meeting");
+      return;
+    }
+    if (editStatus === "completed" && actionItems.some((a) => !a.assigned_to)) {
+      toast.error("Please assign every action item to a person before closing this meeting");
       return;
     }
     const { error } = await supabase
