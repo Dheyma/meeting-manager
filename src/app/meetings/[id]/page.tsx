@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import DateTimePicker, { buildISODate, parseDateParts, buildDateOnly, parseDateOnly } from "@/components/DateTimePicker";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
+import { getStoredUser, isAdmin } from "@/lib/auth";
 import {
   Calendar,
   MapPin,
@@ -49,6 +50,7 @@ export default function MeetingDetailPage({
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [meetingDocs, setMeetingDocs] = useState<MeetingDocument[]>([]);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
   const [newAgendaDescription, setNewAgendaDescription] = useState("");
@@ -153,6 +155,14 @@ export default function MeetingDetailPage({
     if (actionsRes.data) setActionItems(actionsRes.data);
     if (peopleRes.data) setPeople(peopleRes.data);
     if (docsRes.data) setMeetingDocs(docsRes.data);
+
+    const user = getStoredUser();
+    if (user && meetingRes.data) {
+      const me = (peopleRes.data || []).find((p) => p.id === user.personId);
+      const hasFullAccess = isAdmin(user) || !!me?.access_all_meetings;
+      const isAttendee = (attendeesRes.data || []).some((a) => a.person_id === user.personId);
+      setAccessDenied(!hasFullAccess && !isAttendee);
+    }
   }
 
   async function toggleAttendance(attendeeId: string, current: boolean) {
@@ -802,6 +812,15 @@ export default function MeetingDetailPage({
 
   if (!meeting) {
     return <div className="text-gray-500">Loading...</div>;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+        <h1 className="text-lg font-semibold text-gray-900 mb-1">Access Restricted</h1>
+        <p className="text-sm text-gray-500">You can only view details of meetings you have attended.</p>
+      </div>
+    );
   }
 
   return (

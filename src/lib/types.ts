@@ -7,6 +7,7 @@ export interface Person {
   organization?: string;
   password?: string;
   can_login: boolean;
+  access_all_meetings?: boolean;
   created_at: string;
 }
 

@@ -1,8 +1,13 @@
 export const AUTH_KEY = "meeting_mgr_session";
+export const ADMIN_NAME = "sunil rasaily";
 
 export interface AuthUser {
   personId: string;
   name: string;
+}
+
+export function isAdmin(user: AuthUser | null): boolean {
+  return user?.name?.toLowerCase() === ADMIN_NAME;
 }
 
 export function getStoredUser(): AuthUser | null {

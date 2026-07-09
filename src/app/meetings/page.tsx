@@ -7,9 +7,11 @@ import Link from "next/link";
 import { Plus, Calendar, MapPin, Building2, Search, X, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { getStoredUser, isAdmin } from "@/lib/auth";
 
 interface MeetingAttendeeWithPerson {
   meeting_id: string;
+  person_id: string;
   person: { name: string } | null;
 }
 
@@ -43,24 +45,36 @@ export default function MeetingsPage() {
   async function fetchMeetings() {
     const [meetingsRes, attendeesRes, agendaRes, decisionsRes, actionsRes, peopleRes] = await Promise.all([
       supabase.from("meetings").select("*").order("date", { ascending: false }),
-      supabase.from("meeting_attendees").select("meeting_id, person:people(name)"),
+      supabase.from("meeting_attendees").select("meeting_id, person_id, person:people(name)"),
       supabase.from("agenda_items").select("meeting_id, title, description"),
       supabase.from("decisions").select("meeting_id, description"),
       supabase.from("action_items").select("meeting_id, description"),
-      supabase.from("people").select("id, name, organization"),
+      supabase.from("people").select("id, name, organization, access_all_meetings"),
     ]);
     if (meetingsRes.error) {
       toast.error("Failed to load meetings");
       return;
     }
-    setMeetings(meetingsRes.data || []);
+
+    const attendees = (attendeesRes.data || []) as unknown as MeetingAttendeeWithPerson[];
+    let visibleMeetings = meetingsRes.data || [];
+
+    const user = getStoredUser();
+    if (user && !isAdmin(user)) {
+      const me = (peopleRes.data || []).find((p) => p.id === user.personId) as { access_all_meetings?: boolean } | undefined;
+      if (!me?.access_all_meetings) {
+        const allowedMeetingIds = new Set(
+          attendees.filter((a) => a.person_id === user.personId).map((a) => a.meeting_id)
+        );
+        visibleMeetings = visibleMeetings.filter((m) => allowedMeetingIds.has(m.id));
+      }
+    }
+    setMeetings(visibleMeetings);
 
     const map: Record<string, string[]> = {};
-    if (attendeesRes.data) {
-      for (const a of attendeesRes.data as unknown as MeetingAttendeeWithPerson[]) {
-        if (!map[a.meeting_id]) map[a.meeting_id] = [];
-        if (a.person?.name) map[a.meeting_id].push(a.person.name);
-      }
+    for (const a of attendees) {
+      if (!map[a.meeting_id]) map[a.meeting_id] = [];
+      if (a.person?.name) map[a.meeting_id].push(a.person.name);
     }
     setAttendeeMap(map);
 

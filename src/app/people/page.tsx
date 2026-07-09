@@ -6,9 +6,7 @@ import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Pencil, X, ArrowUp, ArrowDown, KeyRound } from "lucide-react";
 import { logAction } from "@/lib/log";
-import { getStoredUser } from "@/lib/auth";
-
-const ADMIN_NAME = "sunil rasaily";
+import { getStoredUser, isAdmin as checkIsAdmin } from "@/lib/auth";
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -38,7 +36,7 @@ export default function PeoplePage() {
 
   useEffect(() => {
     const user = getStoredUser();
-    setIsAdmin(user?.name?.toLowerCase() === ADMIN_NAME);
+    setIsAdmin(checkIsAdmin(user));
     fetchPeople();
     const channel = supabase
       .channel("people-changes")
@@ -50,7 +48,7 @@ export default function PeoplePage() {
   async function fetchPeople() {
     const { data, error } = await supabase
       .from("people")
-      .select("id, name, designation, email, phone, organization, can_login, created_at")
+      .select("id, name, designation, email, phone, organization, can_login, access_all_meetings, created_at")
       .order("name");
     if (error) { toast.error("Failed to load people"); return; }
     setPeople(data || []);
@@ -70,6 +68,23 @@ export default function PeoplePage() {
       person.name
     );
     toast.success(newVal ? `Login access granted to ${person.name}` : `Login access revoked for ${person.name}`);
+    fetchPeople();
+  }
+
+  async function toggleAccessAllMeetings(person: Person) {
+    if (!isAdmin) return;
+    const newVal = !person.access_all_meetings;
+    const { error } = await supabase
+      .from("people")
+      .update({ access_all_meetings: newVal })
+      .eq("id", person.id);
+    if (error) { toast.error("Failed to update meeting access"); return; }
+    await logAction(
+      newVal ? "Granted access to all meetings" : "Revoked access to all meetings",
+      "person",
+      person.name
+    );
+    toast.success(newVal ? `${person.name} can now access all meetings` : `${person.name} restricted to attended meetings only`);
     fetchPeople();
   }
 
@@ -309,6 +324,7 @@ export default function PeoplePage() {
                 </th>
               ))}
               <th className="text-center px-6 py-3 text-sm font-medium text-gray-500">Login Access</th>
+              <th className="text-center px-6 py-3 text-sm font-medium text-gray-500">Access to All Meetings</th>
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
@@ -328,6 +344,16 @@ export default function PeoplePage() {
                     onChange={() => toggleLoginAccess(person)}
                     disabled={!isAdmin}
                     title={isAdmin ? (person.can_login ? "Revoke login access" : "Grant login access") : "Only the system administrator can change login access"}
+                    className={`w-4 h-4 rounded ${isAdmin ? "cursor-pointer accent-blue-600" : "cursor-not-allowed opacity-40"}`}
+                  />
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={!!person.access_all_meetings}
+                    onChange={() => toggleAccessAllMeetings(person)}
+                    disabled={!isAdmin}
+                    title={isAdmin ? (person.access_all_meetings ? "Restrict to attended meetings only" : "Grant access to all meetings") : "Only the system administrator can change meeting access"}
                     className={`w-4 h-4 rounded ${isAdmin ? "cursor-pointer accent-blue-600" : "cursor-not-allowed opacity-40"}`}
                   />
                 </td>
@@ -353,7 +379,7 @@ export default function PeoplePage() {
             ))}
             {people.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
                   No people added yet. Click &quot;Add Person&quot; to get started.
                 </td>
               </tr>
