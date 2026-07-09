@@ -32,6 +32,7 @@ import {
   Building2,
   CalendarClock,
   Mail,
+  Video,
 } from "lucide-react";
 
 export default function MeetingDetailPage({
@@ -93,6 +94,7 @@ export default function MeetingDetailPage({
   const [editHour, setEditHour] = useState("");
   const [editMinute, setEditMinute] = useState("");
   const [editLocation, setEditLocation] = useState("");
+  const [editRemoteLink, setEditRemoteLink] = useState("");
   const [editStatus, setEditStatus] = useState<Meeting["status"]>("scheduled");
   const [editDepartment, setEditDepartment] = useState("");
   const [editOtherDepartment, setEditOtherDepartment] = useState("");
@@ -479,6 +481,7 @@ export default function MeetingDetailPage({
     setEditHour(parts.hour);
     setEditMinute(parts.minute);
     setEditLocation(meeting.location || "");
+    setEditRemoteLink(meeting.remote_link || "");
     const dept = meeting.department || "";
     if (dept && !allDepartments.includes(dept)) {
       setEditDepartment("Others");
@@ -512,6 +515,7 @@ export default function MeetingDetailPage({
         description: editDescription || null,
         date: buildISODate(editDay, editMonth, editYear, editHour, editMinute),
         location: editLocation || null,
+        remote_link: editRemoteLink || null,
         department: editDepartment === "Others" ? (editOtherDepartment || "Others") :
                    editDepartment === "__add_new__" ? (editNewDeptName.trim() || null) :
                    (editDepartment || null),
@@ -710,6 +714,7 @@ export default function MeetingDetailPage({
             title: meeting.title,
             date: meeting.date,
             location: meeting.location,
+            remoteLink: meeting.remote_link,
             department: meeting.department,
             description: meeting.description,
             requestedByName: requestedByPerson?.name ?? null,
@@ -742,6 +747,7 @@ export default function MeetingDetailPage({
         title: meeting.title,
         date: meeting.date,
         location: meeting.location,
+        remoteLink: meeting.remote_link,
         department: meeting.department,
         description: meeting.description,
         status: meeting.status,
@@ -820,6 +826,17 @@ export default function MeetingDetailPage({
                   <MapPin size={14} />
                   {meeting.location}
                 </span>
+              )}
+              {meeting.remote_link && (
+                <a
+                  href={meeting.remote_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-blue-600 hover:underline"
+                >
+                  <Video size={14} />
+                  Join Online
+                </a>
               )}
               {meeting.department && (
                 <span className="flex items-center gap-1">
@@ -971,6 +988,16 @@ export default function MeetingDetailPage({
                   value={editLocation}
                   onChange={(e) => setEditLocation(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Remote Link (if online)</label>
+                <input
+                  type="url"
+                  value={editRemoteLink}
+                  onChange={(e) => setEditRemoteLink(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  placeholder="e.g. https://meet.google.com/xyz-abcd"
                 />
               </div>
               <div>

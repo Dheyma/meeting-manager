@@ -29,6 +29,7 @@ interface MeetingInfo {
   title: string;
   date: string;
   location?: string | null;
+  remoteLink?: string | null;
   department?: string | null;
   description?: string | null;
   status: string;
@@ -54,6 +55,9 @@ function buildEmailHtml(
   const metaRows = [
     ["Date &amp; Time", dateStr],
     meeting.location ? ["Location", meeting.location] : null,
+    meeting.remoteLink
+      ? ["Join Online", `<a href="${meeting.remoteLink}" style="color:#1d4ed8;">${meeting.remoteLink}</a>`]
+      : null,
     meeting.department ? ["Department", meeting.department] : null,
     meeting.requestedByName ? ["Requested By", meeting.requestedByName] : null,
     meeting.transcribedByName ? ["Transcribed By", meeting.transcribedByName] : null,

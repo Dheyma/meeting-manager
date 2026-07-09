@@ -26,6 +26,7 @@ export default function NewMeetingPage() {
   const [hour, setHour] = useState("");
   const [minute, setMinute] = useState("");
   const [location, setLocation] = useState("");
+  const [remoteLink, setRemoteLink] = useState("");
   const [department, setDepartment] = useState("");
   const [otherDepartment, setOtherDepartment] = useState("");
   const [newDeptName, setNewDeptName] = useState("");
@@ -105,6 +106,7 @@ export default function NewMeetingPage() {
           description: description || null,
           date: buildISODate(day, month, year, hour, minute),
           location: location || null,
+          remote_link: remoteLink || null,
           department: department === "Others" ? (otherDepartment || "Others") :
                      department === "__add_new__" ? (newDeptName.trim() || null) :
                      (department || null),
@@ -232,6 +234,16 @@ export default function NewMeetingPage() {
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 placeholder="e.g. Conference Room A"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Remote Link (if online)</label>
+              <input
+                type="url"
+                value={remoteLink}
+                onChange={(e) => setRemoteLink(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                placeholder="e.g. https://meet.google.com/xyz-abcd"
               />
             </div>
             <div>

@@ -16,6 +16,7 @@ function buildIcs(params: {
   title: string;
   description?: string | null;
   location?: string | null;
+  remoteLink?: string | null;
   startDate: Date;
   endDate: Date;
   organizerEmail: string;
@@ -37,6 +38,7 @@ function buildIcs(params: {
     `SUMMARY:${escapeIcs(params.title)}`,
     params.description ? `DESCRIPTION:${escapeIcs(params.description)}` : null,
     params.location ? `LOCATION:${escapeIcs(params.location)}` : null,
+    params.remoteLink ? `URL:${escapeIcs(params.remoteLink)}` : null,
     `ORGANIZER;CN=Meeting Manager:mailto:${params.organizerEmail}`,
     `ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=TRUE;CN=${escapeIcs(params.attendeeName)}:mailto:${params.attendeeEmail}`,
     "STATUS:CONFIRMED",
@@ -73,6 +75,9 @@ export async function POST(request: NextRequest) {
   const metaRows = [
     ["Date &amp; Time", dateStr],
     meeting.location ? ["Location", meeting.location] : null,
+    meeting.remoteLink
+      ? ["Join Online", `<a href="${meeting.remoteLink}" style="color:#1d4ed8;">${meeting.remoteLink}</a>`]
+      : null,
     meeting.department ? ["Department / Organisation", meeting.department] : null,
     meeting.requestedByName ? ["Requested By", meeting.requestedByName] : null,
   ]
@@ -130,6 +135,7 @@ export async function POST(request: NextRequest) {
     title: meeting.title,
     description: meeting.description,
     location: meeting.location,
+    remoteLink: meeting.remoteLink,
     startDate,
     endDate,
     organizerEmail: "noreply@dheymabhutan.com",

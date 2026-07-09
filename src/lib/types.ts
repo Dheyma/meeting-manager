@@ -16,6 +16,7 @@ export interface Meeting {
   description?: string;
   date: string;
   location?: string;
+  remote_link?: string;
   department?: string;
   requested_by?: string;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
