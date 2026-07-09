@@ -1755,19 +1755,15 @@ export default function MeetingDetailPage({
         </div>
         {editingTranscribedBy ? (
           <div className="flex items-center gap-3">
-            <select
-              value={editTranscribedBy}
-              onChange={(e) => setEditTranscribedBy(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              autoFocus
-            >
-              <option value="">Not assigned</option>
-              {people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name}{person.organization ? `, ${person.organization}` : ""}
-                </option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <PersonCombobox
+                people={people}
+                value={editTranscribedBy}
+                onChange={setEditTranscribedBy}
+                placeholder="Not assigned"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
             <button
               onClick={saveTranscribedBy}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
