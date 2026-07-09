@@ -107,7 +107,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </div>
 
         {/* Desktop nav row */}
-        <div className="hidden md:flex items-center gap-6 px-4 pb-3">
+        <div className="hidden md:flex items-center justify-end gap-6 px-4 pb-3">
           {navLinks.map(({ href, icon, label }) => (
             <Link key={href} href={href} className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 whitespace-nowrap">
               {icon}
