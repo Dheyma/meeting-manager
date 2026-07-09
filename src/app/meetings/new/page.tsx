@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Person } from "@/lib/types";
 import toast from "react-hot-toast";
 import DateTimePicker, { buildISODate } from "@/components/DateTimePicker";
+import AttendeePicker from "@/components/AttendeePicker";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
 import { Plus, Trash2, FileText, Upload, X } from "lucide-react";
@@ -323,24 +324,7 @@ export default function NewMeetingPage() {
           {people.length === 0 ? (
             <p className="text-sm text-gray-500">No people added yet. Add people from the People page first.</p>
           ) : (
-            <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-              {people.map((person) => (
-                <label
-                  key={person.id}
-                  className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedAttendees.includes(person.id)}
-                    onChange={() => toggleAttendee(person.id)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-900">
-                    {person.name}{person.organization ? `, ${person.organization}` : ""}
-                  </span>
-                </label>
-              ))}
-            </div>
+            <AttendeePicker people={people} selected={selectedAttendees} onToggle={toggleAttendee} />
           )}
         </div>
 

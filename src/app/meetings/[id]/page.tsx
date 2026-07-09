@@ -15,6 +15,8 @@ import {
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import DateTimePicker, { buildISODate, parseDateParts, buildDateOnly, parseDateOnly } from "@/components/DateTimePicker";
+import AttendeePicker from "@/components/AttendeePicker";
+import PersonCombobox from "@/components/PersonCombobox";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
 import { getStoredUser, isAdmin } from "@/lib/auth";
@@ -1119,24 +1121,7 @@ export default function MeetingDetailPage({
                 {people.length === 0 ? (
                   <p className="text-sm text-gray-500">No people added yet.</p>
                 ) : (
-                  <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                    {people.map((person) => (
-                      <label
-                        key={person.id}
-                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={editAttendees.includes(person.id)}
-                          onChange={() => toggleEditAttendee(person.id)}
-                          className="rounded border-gray-300"
-                        />
-                        <span className="text-sm text-gray-900">
-                          {person.name}{person.organization ? `, ${person.organization}` : ""}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+                  <AttendeePicker people={people} selected={editAttendees} onToggle={toggleEditAttendee} />
                 )}
               </div>
               {/* Background Document */}
@@ -1594,18 +1579,15 @@ export default function MeetingDetailPage({
                     autoFocus
                   />
                   <div className="flex gap-2">
-                    <select
-                      value={editingActionAssignee}
-                      onChange={(e) => setEditingActionAssignee(e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-                    >
-                      <option value="">Assign to...</option>
-                      {people.map((person) => (
-                        <option key={person.id} value={person.id}>
-                          {person.name}{person.organization ? `, ${person.organization}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex-1">
+                      <PersonCombobox
+                        people={people}
+                        value={editingActionAssignee}
+                        onChange={setEditingActionAssignee}
+                        placeholder="Assign to..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                      />
+                    </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <span className="text-xs text-gray-600 whitespace-nowrap">Due</span>
                       <select value={editingActionDueDay} onChange={(e) => setEditingActionDueDay(e.target.value)} className="border border-gray-300 rounded px-1 py-1.5 text-sm">
@@ -1720,18 +1702,15 @@ export default function MeetingDetailPage({
             />
           </div>
           <div className="flex gap-2">
-            <select
-              value={newActionAssignee}
-              onChange={(e) => setNewActionAssignee(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="">Assign to...</option>
-              {people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name}{person.organization ? `, ${person.organization}` : ""}
-                </option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <PersonCombobox
+                people={people}
+                value={newActionAssignee}
+                onChange={setNewActionAssignee}
+                placeholder="Assign to..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-sm text-gray-600 whitespace-nowrap">To be completed by</span>
               <select value={newActionDueDay} onChange={(e) => setNewActionDueDay(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-2 text-sm">
