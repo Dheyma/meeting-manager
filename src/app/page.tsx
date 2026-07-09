@@ -19,6 +19,25 @@ import {
   subMonths,
   isToday,
 } from "date-fns";
+import { getStoredUser, isAdmin } from "@/lib/auth";
+
+async function getAllowedMeetingIds(): Promise<Set<string> | null> {
+  const user = getStoredUser();
+  if (!user || isAdmin(user)) return null;
+
+  const { data: me } = await supabase
+    .from("people")
+    .select("access_all_meetings")
+    .eq("id", user.personId)
+    .single();
+  if (me?.access_all_meetings) return null;
+
+  const { data: attended } = await supabase
+    .from("meeting_attendees")
+    .select("meeting_id")
+    .eq("person_id", user.personId);
+  return new Set((attended || []).map((a) => a.meeting_id));
+}
 
 export default function Home() {
   const router = useRouter();
@@ -46,20 +65,24 @@ export default function Home() {
   }, []);
 
   async function fetchActionItems() {
+    const allowed = await getAllowedMeetingIds();
     const { data } = await supabase
       .from("action_items")
       .select("*, person:people(*), meeting:meetings(id, title)")
       .neq("status", "completed")
       .order("created_at", { ascending: false });
-    setActionItems((data as unknown as (ActionItem & { meeting?: Meeting })[]) || []);
+    const items = (data as unknown as (ActionItem & { meeting?: Meeting })[]) || [];
+    setActionItems(allowed ? items.filter((a) => allowed.has(a.meeting_id)) : items);
   }
 
   async function fetchMeetings() {
+    const allowed = await getAllowedMeetingIds();
     const { data } = await supabase
       .from("meetings")
       .select("*")
       .order("date", { ascending: false });
-    setMeetings(data || []);
+    const rows = data || [];
+    setMeetings(allowed ? rows.filter((m) => allowed.has(m.id)) : rows);
   }
 
   function getMeetingsForDay(day: Date) {
