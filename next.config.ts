@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withMicrofrontends } from "@vercel/microfrontends/next/config";
 
 const nextConfig: NextConfig = {
   basePath: "/MMS",
@@ -10,4 +11,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withMicrofrontends(nextConfig);
