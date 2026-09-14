@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Toaster } from "react-hot-toast";
 import { CalendarDays, Users, Home, LogOut, ClipboardList, ListChecks, Menu, X } from "lucide-react";
+import dheymaLogo from "../../public/dheyma-logo.png";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <div className="flex items-center justify-between px-3 py-3 md:px-4 md:pt-4 md:pb-2">
           <Link href="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
             <Image
-              src="/dheyma-logo.png"
+              src={dheymaLogo}
               alt="Dheyma Logo"
               width={130}
               height={130}

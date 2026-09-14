@@ -7,6 +7,7 @@ import { setStoredUser, getStoredUser } from "@/lib/auth";
 import { logActionAs } from "@/lib/log";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import dheymaLogo from "../../../public/dheyma-logo.png";
 
 interface PersonOption {
   id: string;
@@ -61,7 +62,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center px-4">
       <div className="mb-6 flex flex-col items-center text-center">
-        <Image src="/dheyma-logo.png" alt="Dheyma Logo" width={120} height={120} className="rounded w-24 h-24 md:w-40 md:h-40" unoptimized />
+        <Image src={dheymaLogo} alt="Dheyma Logo" width={120} height={120} className="rounded w-24 h-24 md:w-40 md:h-40" unoptimized />
         <h1 className="text-xl md:text-2xl font-bold mt-2" style={{ color: "#B8860B" }}>
           Dheyma Global Ventures Pvt. Ltd.
         </h1>
