@@ -58,7 +58,7 @@ export default function MeetingDetailPage({
   const [meetingDocs, setMeetingDocs] = useState<MeetingDocument[]>([]);
   const [accessDenied, setAccessDenied] = useState(false);
   const [generatingMinutes, setGeneratingMinutes] = useState(false);
-  const [minutes, setMinutes] = useState<{ blob: Blob; fileName: string; generatedAt: Date } | null>(null);
+  const [generatedMinutes, setMinutes] = useState<{ blob: Blob; fileName: string; generatedAt: Date; source: unknown[] } | null>(null);
   const [viewingMinutes, setViewingMinutes] = useState(false);
   const minutesPreviewRef = useRef<HTMLDivElement>(null);
 
@@ -137,9 +137,9 @@ export default function MeetingDetailPage({
   }, [id]);
 
   // Any change to the meeting's records makes previously generated minutes stale.
-  useEffect(() => {
-    setMinutes(null);
-  }, [meeting, attendees, agendaItems, decisions, actionItems]);
+  const minutesSource = [meeting, attendees, agendaItems, decisions, actionItems, people];
+  const minutes =
+    generatedMinutes && generatedMinutes.source.every((v, i) => v === minutesSource[i]) ? generatedMinutes : null;
 
   useEffect(() => {
     if (!viewingMinutes || !minutes || !minutesPreviewRef.current) return;
@@ -792,7 +792,7 @@ export default function MeetingDetailPage({
       const blob = await buildMinutesDocx({
         meeting, attendees, agendaItems, decisions, actionItems, people, logoUrl: dheymaLogo.src,
       });
-      setMinutes({ blob, fileName: minutesFileName(meeting), generatedAt: new Date() });
+      setMinutes({ blob, fileName: minutesFileName(meeting), generatedAt: new Date(), source: minutesSource });
       await logAction("Generated minutes of meeting", "meeting", `Meeting: "${meeting.title}"`);
       toast.success("Minutes of meeting generated");
     } catch {
