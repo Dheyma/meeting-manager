@@ -20,6 +20,7 @@ import PersonCombobox from "@/components/PersonCombobox";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
 import { getStoredUser, isAdmin } from "@/lib/auth";
+import dheymaLogo from "../../../../public/dheyma-logo.png";
 import {
   Calendar,
   MapPin,
@@ -36,6 +37,7 @@ import {
   CalendarClock,
   Mail,
   Video,
+  FileDown,
 } from "lucide-react";
 
 export default function MeetingDetailPage({
@@ -53,6 +55,7 @@ export default function MeetingDetailPage({
   const [people, setPeople] = useState<Person[]>([]);
   const [meetingDocs, setMeetingDocs] = useState<MeetingDocument[]>([]);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [generatingMinutes, setGeneratingMinutes] = useState(false);
 
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
   const [newAgendaDescription, setNewAgendaDescription] = useState("");
@@ -763,6 +766,25 @@ export default function MeetingDetailPage({
     }
   }
 
+  async function downloadMinutes() {
+    if (!meeting) return;
+    setGeneratingMinutes(true);
+    try {
+      const { buildMinutesDocx, minutesFileName, saveMinutes } = await import("@/lib/minutes");
+      const blob = await buildMinutesDocx({
+        meeting, attendees, agendaItems, decisions, actionItems, people, logoUrl: dheymaLogo.src,
+      });
+      const result = await saveMinutes(blob, minutesFileName(meeting));
+      if (result === "cancelled") return;
+      await logAction("Downloaded minutes of meeting", "meeting", `Meeting: "${meeting.title}"`);
+      toast.success(result === "shared" ? "Minutes ready to share" : "Minutes of meeting saved");
+    } catch {
+      toast.error("Failed to create minutes");
+    } finally {
+      setGeneratingMinutes(false);
+    }
+  }
+
   async function sendMeetingRecordsEmail() {
     if (!meeting) return;
     setEmailMeetingStatus("sending");
@@ -892,6 +914,16 @@ export default function MeetingDetailPage({
             })()}
           </div>
           <div className="flex flex-wrap gap-2">
+            {meeting.transcribed_by && (
+              <button
+                onClick={downloadMinutes}
+                disabled={generatingMinutes}
+                className="flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-lg text-sm hover:bg-amber-100 disabled:opacity-60"
+              >
+                <FileDown size={14} />
+                {generatingMinutes ? "Preparing…" : "Minutes (Word)"}
+              </button>
+            )}
             <button
               onClick={openEdit}
               className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200"
