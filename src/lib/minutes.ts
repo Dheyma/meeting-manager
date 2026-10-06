@@ -235,36 +235,91 @@ export async function buildMinutesDocx({ meeting, attendees, agendaItems, decisi
   return Packer.toBlob(doc);
 }
 
-type SaveFilePicker = (opts: {
-  suggestedName: string;
-  types: { description: string; accept: Record<string, string[]> }[];
-}) => Promise<{ createWritable: () => Promise<{ write: (b: Blob) => Promise<void>; close: () => Promise<void> }> }>;
-
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-// Desktop Chrome/Edge: "Save as" dialog so the user picks the folder.
-// Phones: the share sheet (WhatsApp etc.). Otherwise: a normal download.
-export async function saveMinutes(blob: Blob, fileName: string): Promise<"saved" | "shared" | "downloaded" | "cancelled"> {
-  const w = window as unknown as { showSaveFilePicker?: SaveFilePicker };
+// Minimal typings for the File System Access API (Chrome/Edge desktop only).
+interface WritableFile { write: (b: Blob) => Promise<void>; close: () => Promise<void> }
+interface FileHandle { createWritable: () => Promise<WritableFile> }
+interface DirHandle {
+  name: string;
+  getFileHandle: (name: string, o?: { create?: boolean }) => Promise<FileHandle>;
+  queryPermission: (o: { mode: "readwrite" }) => Promise<PermissionState>;
+  requestPermission: (o: { mode: "readwrite" }) => Promise<PermissionState>;
+}
+type DirPicker = (o?: { id?: string; mode?: "readwrite" }) => Promise<DirHandle>;
+
+const pickDir = () => (window as unknown as { showDirectoryPicker?: DirPicker }).showDirectoryPicker;
+export const canPickFolder = () => typeof window !== "undefined" && !!pickDir();
+
+// The chosen folder is remembered per browser in IndexedDB (handles can't go in localStorage).
+const DB = "mms-minutes", STORE = "kv", KEY = "folder";
+function idb<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    const open = indexedDB.open(DB, 1);
+    open.onupgradeneeded = () => open.result.createObjectStore(STORE);
+    open.onerror = () => resolve(undefined);
+    open.onsuccess = () => {
+      const req = fn(open.result.transaction(STORE, mode).objectStore(STORE));
+      req.onsuccess = () => resolve(req.result as T);
+      req.onerror = () => resolve(undefined);
+    };
+  });
+}
+export async function getSavedFolder(): Promise<DirHandle | undefined> {
+  try { return await idb<DirHandle>("readonly", (s) => s.get(KEY)); } catch { return undefined; }
+}
+
+// Ask the user to choose the folder minutes are saved into. Returns the folder name, or null if cancelled.
+export async function chooseFolder(): Promise<DirHandle | null> {
+  const picker = pickDir();
+  if (!picker) return null;
   try {
-    if (w.showSaveFilePicker) {
-      const handle = await w.showSaveFilePicker({
-        suggestedName: fileName,
-        types: [{ description: "Word document", accept: { [DOCX_MIME]: [".docx"] } }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return "saved";
-    }
-    const file = new File([blob], fileName, { type: DOCX_MIME });
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: fileName });
-      return "shared";
-    }
+    const dir = await picker({ id: "mms-minutes", mode: "readwrite" });
+    await idb("readwrite", (s) => s.put(dir, KEY));
+    return dir;
   } catch (err) {
-    if ((err as Error).name === "AbortError") return "cancelled";
+    if ((err as Error).name === "AbortError") return null;
     throw err;
+  }
+}
+
+async function uniqueName(dir: DirHandle, fileName: string) {
+  const dot = fileName.lastIndexOf(".");
+  const base = fileName.slice(0, dot), ext = fileName.slice(dot);
+  for (let n = 1; ; n++) {
+    const name = n === 1 ? fileName : `${base} (${n})${ext}`;
+    try { await dir.getFileHandle(name); } catch { return name; }
+  }
+}
+
+export type SaveResult =
+  | { kind: "saved"; folder: string; fileName: string }
+  | { kind: "shared" | "downloaded" | "cancelled" };
+
+// Desktop Chrome/Edge: save into the user's chosen folder (asked the first time).
+// Phones: the share sheet (WhatsApp etc.). Otherwise: a normal download to Downloads.
+export async function saveMinutes(blob: Blob, fileName: string): Promise<SaveResult> {
+  if (canPickFolder()) {
+    let dir = await getSavedFolder();
+    if (dir && (await dir.queryPermission({ mode: "readwrite" })) !== "granted" &&
+        (await dir.requestPermission({ mode: "readwrite" })) !== "granted") dir = undefined;
+    if (!dir) dir = (await chooseFolder()) ?? undefined;
+    if (!dir) return { kind: "cancelled" };
+    const name = await uniqueName(dir, fileName);
+    const writable = await (await dir.getFileHandle(name, { create: true })).createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return { kind: "saved", folder: dir.name, fileName: name };
+  }
+  const file = new File([blob], fileName, { type: DOCX_MIME });
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: fileName });
+      return { kind: "shared" };
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return { kind: "cancelled" };
+      throw err;
+    }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -272,5 +327,5 @@ export async function saveMinutes(blob: Blob, fileName: string): Promise<"saved"
   a.download = fileName;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return "downloaded";
+  return { kind: "downloaded" };
 }

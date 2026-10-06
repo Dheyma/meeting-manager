@@ -61,6 +61,9 @@ export default function MeetingDetailPage({
   const [generatedMinutes, setMinutes] = useState<{ blob: Blob; fileName: string; generatedAt: Date; source: unknown[] } | null>(null);
   const [viewingMinutes, setViewingMinutes] = useState(false);
   const minutesPreviewRef = useRef<HTMLDivElement>(null);
+  const [minutesFolder, setMinutesFolder] = useState<string | null>(null);
+  const [folderPickable, setFolderPickable] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
   const [newAgendaDescription, setNewAgendaDescription] = useState("");
@@ -802,14 +805,36 @@ export default function MeetingDetailPage({
     }
   }
 
+  useEffect(() => {
+    import("@/lib/minutes").then(async ({ canPickFolder, getSavedFolder }) => {
+      setFolderPickable(canPickFolder());
+      setMinutesFolder((await getSavedFolder())?.name ?? null);
+    });
+  }, []);
+
+  async function changeMinutesFolder() {
+    const { chooseFolder } = await import("@/lib/minutes");
+    const dir = await chooseFolder();
+    if (dir) {
+      setMinutesFolder(dir.name);
+      toast.success(`Minutes will be saved to "${dir.name}"`);
+    }
+  }
+
   async function saveMinutesFile() {
     if (!minutes) return;
     try {
       const { saveMinutes } = await import("@/lib/minutes");
       const result = await saveMinutes(minutes.blob, minutes.fileName);
-      if (result === "cancelled") return;
-      await logAction("Saved minutes of meeting", "meeting", `Meeting: "${meeting?.title}"`);
-      toast.success(result === "shared" ? "Minutes ready to share" : "Minutes of meeting saved");
+      if (result.kind === "cancelled") return;
+      const where =
+        result.kind === "saved" ? `Saved to folder "${result.folder}" as ${result.fileName}`
+        : result.kind === "downloaded" ? `Saved to your Downloads folder as ${minutes.fileName}`
+        : "Shared";
+      if (result.kind === "saved") setMinutesFolder(result.folder);
+      setLastSaved(where);
+      await logAction("Saved minutes of meeting", "meeting", `Meeting: "${meeting?.title}" — ${where}`);
+      toast.success(where);
     } catch {
       toast.error("Failed to save minutes");
     }
@@ -1853,6 +1878,15 @@ export default function MeetingDetailPage({
               ? `Generated at ${format(minutes.generatedAt, "HH:mm")} — ${minutes.fileName}`
               : "Create a Word document of this meeting's records to view, save or share on WhatsApp."}
         </p>
+        {folderPickable && (
+          <p className="text-sm text-gray-600 mb-3">
+            Save to folder:{" "}
+            <span className="font-medium text-gray-800">{minutesFolder ?? "not chosen yet (you'll be asked on Save)"}</span>{" "}
+            <button onClick={changeMinutesFolder} className="text-blue-600 hover:underline ml-1">
+              {minutesFolder ? "Change folder" : "Choose folder"}
+            </button>
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={generateMinutes}
@@ -1879,6 +1913,12 @@ export default function MeetingDetailPage({
             Save
           </button>
         </div>
+        {lastSaved && (
+          <p className="flex items-center gap-1 text-sm text-green-700 mt-3">
+            <CheckCircle size={15} className="shrink-0" />
+            {lastSaved}
+          </p>
+        )}
       </div>
 
       {/* Minutes Preview Modal */}
