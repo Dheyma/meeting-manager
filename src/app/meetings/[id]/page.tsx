@@ -63,6 +63,7 @@ export default function MeetingDetailPage({
   const minutesPreviewRef = useRef<HTMLDivElement>(null);
   const [minutesFolder, setMinutesFolder] = useState<string | null>(null);
   const [folderPickable, setFolderPickable] = useState(false);
+  const [saveHint, setSaveHint] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
@@ -806,8 +807,15 @@ export default function MeetingDetailPage({
   }
 
   useEffect(() => {
-    import("@/lib/minutes").then(async ({ canPickFolder, getSavedFolder }) => {
-      setFolderPickable(canPickFolder());
+    import("@/lib/minutes").then(async ({ canPickFolder, getSavedFolder, isMobileDevice, isSafari }) => {
+      const mobile = isMobileDevice();
+      setFolderPickable(canPickFolder() && !mobile);
+      setSaveHint(
+        mobile ? "Save opens the share menu — choose WhatsApp, or Save to Files to keep a copy."
+        : canPickFolder() ? null
+        : isSafari() ? "Safari saves to Downloads. To choose the folder every time: Safari › Settings › General › File download location › Ask for each download."
+        : "This browser saves to Downloads. To choose the folder every time, turn on \"Always ask where to save files\" in the browser's settings, or use Chrome or Edge."
+      );
       setMinutesFolder((await getSavedFolder())?.name ?? null);
     });
   }, []);
@@ -1878,6 +1886,7 @@ export default function MeetingDetailPage({
               ? `Generated at ${format(minutes.generatedAt, "HH:mm")} — ${minutes.fileName}`
               : "Create a Word document of this meeting's records to view, save or share on WhatsApp."}
         </p>
+        {saveHint && <p className="text-sm text-gray-600 mb-3">{saveHint}</p>}
         {folderPickable && (
           <p className="text-sm text-gray-600 mb-3">
             Save to folder:{" "}

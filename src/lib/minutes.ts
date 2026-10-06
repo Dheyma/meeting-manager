@@ -251,6 +251,15 @@ type DirPicker = (o?: { id?: string; mode?: "readwrite" }) => Promise<DirHandle>
 const pickDir = () => (window as unknown as { showDirectoryPicker?: DirPicker }).showDirectoryPicker;
 export const canPickFolder = () => typeof window !== "undefined" && !!pickDir();
 
+// Phones/tablets get the share sheet (WhatsApp); desktops save a file. iPadOS reports a Mac user agent.
+export const isMobileDevice = () =>
+  typeof navigator !== "undefined" &&
+  (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+
+export const isSafari = () =>
+  typeof navigator !== "undefined" && /Safari/.test(navigator.userAgent) && !/Chrome|Chromium|Edg|CriOS|FxiOS/.test(navigator.userAgent);
+
 // The chosen folder is remembered per browser in IndexedDB (handles can't go in localStorage).
 const DB = "mms-minutes", STORE = "kv", KEY = "folder";
 function idb<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest): Promise<T | undefined> {
@@ -299,7 +308,7 @@ export type SaveResult =
 // Desktop Chrome/Edge: save into the user's chosen folder (asked the first time).
 // Phones: the share sheet (WhatsApp etc.). Otherwise: a normal download to Downloads.
 export async function saveMinutes(blob: Blob, fileName: string): Promise<SaveResult> {
-  if (canPickFolder()) {
+  if (canPickFolder() && !isMobileDevice()) {
     let dir = await getSavedFolder();
     if (dir && (await dir.queryPermission({ mode: "readwrite" })) !== "granted" &&
         (await dir.requestPermission({ mode: "readwrite" })) !== "granted") dir = undefined;
@@ -312,7 +321,7 @@ export async function saveMinutes(blob: Blob, fileName: string): Promise<SaveRes
     return { kind: "saved", folder: dir.name, fileName: name };
   }
   const file = new File([blob], fileName, { type: DOCX_MIME });
-  if (navigator.canShare?.({ files: [file] })) {
+  if (isMobileDevice() && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: fileName });
       return { kind: "shared" };
