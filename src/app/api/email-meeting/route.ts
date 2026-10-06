@@ -50,7 +50,8 @@ function buildEmailHtml(
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
+    timeZone: "Asia/Thimphu",
+  }) + " (BTT)";
 
   const metaRows = [
     ["Date &amp; Time", dateStr],
@@ -131,7 +132,7 @@ function buildEmailHtml(
                     <div style="color:#6b7280;font-size:12px;margin-top:2px;">
                       ${[
                         a.personName ? `Assigned to: <strong>${a.personName}</strong>` : "",
-                        a.dueDate ? `Due: ${new Date(a.dueDate).toLocaleDateString("en-GB")}` : "",
+                        a.dueDate ? `Due: ${new Date(a.dueDate).toLocaleDateString("en-GB", { timeZone: "Asia/Thimphu" })}` : "",
                         a.status === "completed" ? '<span style="color:#16a34a;">&#10003; Completed</span>' : "",
                       ]
                         .filter(Boolean)

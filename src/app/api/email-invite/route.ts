@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Asia/Thimphu",
-  });
+  }) + " (BTT)";
 
   const metaRows = [
     ["Date &amp; Time", dateStr],

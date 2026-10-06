@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         <h3 style="margin-top: 0; color: #333;">Action Required:</h3>
         <p style="margin-bottom: 0;">${actionDescription}</p>
       </div>
-      ${dueDate ? `<p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>` : ""}
+      ${dueDate ? `<p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString("en-GB", { timeZone: "Asia/Thimphu" })}</p>` : ""}
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
       <p style="color: #666; font-size: 14px;">This is an automated notification from Meeting Manager.</p>
     </div>

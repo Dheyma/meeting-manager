@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
@@ -38,6 +38,8 @@ import {
   Mail,
   Video,
   FileDown,
+  Eye,
+  Save,
 } from "lucide-react";
 
 export default function MeetingDetailPage({
@@ -56,6 +58,9 @@ export default function MeetingDetailPage({
   const [meetingDocs, setMeetingDocs] = useState<MeetingDocument[]>([]);
   const [accessDenied, setAccessDenied] = useState(false);
   const [generatingMinutes, setGeneratingMinutes] = useState(false);
+  const [minutes, setMinutes] = useState<{ blob: Blob; fileName: string; generatedAt: Date } | null>(null);
+  const [viewingMinutes, setViewingMinutes] = useState(false);
+  const minutesPreviewRef = useRef<HTMLDivElement>(null);
 
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
   const [newAgendaDescription, setNewAgendaDescription] = useState("");
@@ -130,6 +135,19 @@ export default function MeetingDetailPage({
       supabase.removeChannel(channel);
     };
   }, [id]);
+
+  // Any change to the meeting's records makes previously generated minutes stale.
+  useEffect(() => {
+    setMinutes(null);
+  }, [meeting, attendees, agendaItems, decisions, actionItems]);
+
+  useEffect(() => {
+    if (!viewingMinutes || !minutes || !minutesPreviewRef.current) return;
+    const container = minutesPreviewRef.current;
+    import("docx-preview").then(({ renderAsync }) =>
+      renderAsync(minutes.blob, container, undefined, { inWrapper: true, ignoreLastRenderedPageBreak: true })
+    );
+  }, [viewingMinutes, minutes]);
 
   async function fetchAll() {
     const [meetingRes, attendeesRes, agendaRes, decisionsRes, actionsRes, peopleRes, docsRes] =
@@ -766,22 +784,34 @@ export default function MeetingDetailPage({
     }
   }
 
-  async function downloadMinutes() {
+  async function generateMinutes() {
     if (!meeting) return;
     setGeneratingMinutes(true);
     try {
-      const { buildMinutesDocx, minutesFileName, saveMinutes } = await import("@/lib/minutes");
+      const { buildMinutesDocx, minutesFileName } = await import("@/lib/minutes");
       const blob = await buildMinutesDocx({
         meeting, attendees, agendaItems, decisions, actionItems, people, logoUrl: dheymaLogo.src,
       });
-      const result = await saveMinutes(blob, minutesFileName(meeting));
-      if (result === "cancelled") return;
-      await logAction("Downloaded minutes of meeting", "meeting", `Meeting: "${meeting.title}"`);
-      toast.success(result === "shared" ? "Minutes ready to share" : "Minutes of meeting saved");
+      setMinutes({ blob, fileName: minutesFileName(meeting), generatedAt: new Date() });
+      await logAction("Generated minutes of meeting", "meeting", `Meeting: "${meeting.title}"`);
+      toast.success("Minutes of meeting generated");
     } catch {
-      toast.error("Failed to create minutes");
+      toast.error("Failed to generate minutes");
     } finally {
       setGeneratingMinutes(false);
+    }
+  }
+
+  async function saveMinutesFile() {
+    if (!minutes) return;
+    try {
+      const { saveMinutes } = await import("@/lib/minutes");
+      const result = await saveMinutes(minutes.blob, minutes.fileName);
+      if (result === "cancelled") return;
+      await logAction("Saved minutes of meeting", "meeting", `Meeting: "${meeting?.title}"`);
+      toast.success(result === "shared" ? "Minutes ready to share" : "Minutes of meeting saved");
+    } catch {
+      toast.error("Failed to save minutes");
     }
   }
 
@@ -914,16 +944,6 @@ export default function MeetingDetailPage({
             })()}
           </div>
           <div className="flex flex-wrap gap-2">
-            {meeting.transcribed_by && (
-              <button
-                onClick={downloadMinutes}
-                disabled={generatingMinutes}
-                className="flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-lg text-sm hover:bg-amber-100 disabled:opacity-60"
-              >
-                <FileDown size={14} />
-                {generatingMinutes ? "Preparing…" : "Minutes (Word)"}
-              </button>
-            )}
             <button
               onClick={openEdit}
               className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200"
@@ -1822,6 +1842,68 @@ export default function MeetingDetailPage({
           </p>
         )}
       </div>
+
+      {/* Minutes of Meeting */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Minutes of Meeting</h2>
+        <p className="text-sm text-gray-500 mb-3">
+          {!meeting.transcribed_by
+            ? "Available once Meeting Transcribed By is set."
+            : minutes
+              ? `Generated at ${format(minutes.generatedAt, "HH:mm")} — ${minutes.fileName}`
+              : "Create a Word document of this meeting's records to view, save or share on WhatsApp."}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={generateMinutes}
+            disabled={!meeting.transcribed_by || generatingMinutes}
+            className="flex items-center gap-1 bg-amber-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FileDown size={15} />
+            {generatingMinutes ? "Generating…" : minutes ? "Regenerate Minutes" : "Generate Minutes of Meeting"}
+          </button>
+          <button
+            onClick={() => setViewingMinutes(true)}
+            disabled={!minutes}
+            className="flex items-center gap-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Eye size={15} />
+            View
+          </button>
+          <button
+            onClick={saveMinutesFile}
+            disabled={!minutes}
+            className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save size={15} />
+            Save
+          </button>
+        </div>
+      </div>
+
+      {/* Minutes Preview Modal */}
+      {viewingMinutes && minutes && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 md:p-6">
+          <div className="bg-white rounded-lg w-full max-w-4xl h-full flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <h2 className="text-base font-semibold text-gray-900 truncate">{minutes.fileName}</h2>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={saveMinutesFile}
+                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
+                >
+                  <Save size={14} />
+                  Save
+                </button>
+                <button onClick={() => setViewingMinutes(false)} className="text-gray-400 hover:text-gray-600">
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div ref={minutesPreviewRef} className="flex-1 overflow-auto bg-gray-100" />
+          </div>
+        </div>
+      )}
 
       {/* Send Meeting Records via Email */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
