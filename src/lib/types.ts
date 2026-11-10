@@ -76,6 +76,7 @@ export interface ActionItem {
   due_date?: string;
   status: "pending" | "in_progress" | "completed";
   email_sent: boolean;
+  sort_order?: number | null;
   created_at: string;
   updated_at: string;
   person?: Person;

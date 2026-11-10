@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import DateTimePicker, { buildISODate, parseDateParts, buildDateOnly, parseDateOnly } from "@/components/DateTimePicker";
 import AttendeePicker from "@/components/AttendeePicker";
 import PersonCombobox from "@/components/PersonCombobox";
+import SortableList from "@/components/SortableList";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
 import { getStoredUser, isAdmin } from "@/lib/auth";
@@ -170,7 +171,9 @@ export default function MeetingDetailPage({
         supabase
           .from("action_items")
           .select("*, person:people(*)")
-          .eq("meeting_id", id),
+          .eq("meeting_id", id)
+          .order("sort_order", { nullsFirst: false })
+          .order("created_at"),
         supabase.from("people").select("*").order("name"),
         supabase.from("meeting_documents").select("*").eq("meeting_id", id).order("created_at"),
       ]);
@@ -418,6 +421,7 @@ export default function MeetingDetailPage({
       description: newActionDescription,
       assigned_to: newActionAssignee || null,
       due_date: buildDateOnly(newActionDueDay, newActionDueMonth, newActionDueYear),
+      sort_order: actionItems.reduce((m, a) => Math.max(m, a.sort_order ?? -1), -1) + 1,
     });
     if (error) {
       toast.error(error.message);
@@ -467,6 +471,23 @@ export default function MeetingDetailPage({
     } catch {
       toast.error("Failed to send email");
     }
+  }
+
+  async function reorderActionItems(next: ActionItem[]) {
+    const moved = next.map((a, i) => ({ ...a, sort_order: i }));
+    const changed = moved.filter((a, i) => next[i].sort_order !== i);
+    setActionItems(moved);
+    if (changed.length === 0) return;
+    const results = await Promise.all(
+      changed.map((a) => supabase.from("action_items").update({ sort_order: a.sort_order }).eq("id", a.id))
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      toast.error(`Could not save the new order: ${failed.error.message}`);
+      fetchAll();
+      return;
+    }
+    await logAction("Reordered action items", "action_item", `meeting: ${meeting?.title}`);
   }
 
   async function toggleActionStatus(actionId: string, current: string) {
@@ -1644,12 +1665,14 @@ export default function MeetingDetailPage({
         </h2>
 
         <div className="space-y-3 mb-4">
-          {actionItems.map((action, index) => (
-            <div
-              key={action.id}
-              className="p-3 bg-orange-50 rounded-lg"
-            >
-              {editingActionId === action.id ? (
+          <SortableList
+            items={actionItems}
+            onReorder={reorderActionItems}
+            isLocked={(a) => editingActionId === a.id}
+            rowClassName="p-3 bg-orange-50 rounded-lg"
+          >
+            {(action, index, dragHandle) => (
+              editingActionId === action.id ? (
                 <div className="space-y-2">
                   <input
                     type="text"
@@ -1708,6 +1731,7 @@ export default function MeetingDetailPage({
               ) : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1">
+                    {dragHandle}
                     <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
                     <button onClick={() => toggleActionStatus(action.id, action.status)}>
                       {action.status === "completed" ? (
@@ -1762,9 +1786,9 @@ export default function MeetingDetailPage({
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+              )
+            )}
+          </SortableList>
           {actionItems.length === 0 && (
             <p className="text-sm text-gray-500">No action items yet.</p>
           )}
