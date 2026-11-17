@@ -10,6 +10,7 @@ import AttendeePicker from "@/components/AttendeePicker";
 import PersonCombobox from "@/components/PersonCombobox";
 import { useDepartments } from "@/hooks/useDepartments";
 import { logAction } from "@/lib/log";
+import { getStoredUser } from "@/lib/auth";
 import { Plus, Trash2, FileText, Upload, X } from "lucide-react";
 
 interface DraftAgendaItem {
@@ -113,6 +114,7 @@ export default function NewMeetingPage() {
                      department === "__add_new__" ? (newDeptName.trim() || null) :
                      (department || null),
           requested_by: requestedBy || null,
+          created_by: getStoredUser()?.personId ?? null,
         })
         .select()
         .single();

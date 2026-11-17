@@ -20,6 +20,7 @@ export interface Meeting {
   remote_link?: string;
   department?: string;
   requested_by?: string;
+  created_by?: string | null;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
   agenda_document_url?: string;
   agenda_document_name?: string;

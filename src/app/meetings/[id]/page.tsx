@@ -191,7 +191,8 @@ export default function MeetingDetailPage({
       const me = (peopleRes.data || []).find((p) => p.id === user.personId);
       const hasFullAccess = isAdmin(user) || !!me?.access_all_meetings;
       const isAttendee = (attendeesRes.data || []).some((a) => a.person_id === user.personId);
-      setAccessDenied(!hasFullAccess && !isAttendee);
+      const isCreator = meetingRes.data.created_by === user.personId;
+      setAccessDenied(!hasFullAccess && !isAttendee && !isCreator);
     }
   }
 
@@ -942,7 +943,7 @@ export default function MeetingDetailPage({
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
         <h1 className="text-lg font-semibold text-gray-900 mb-1">Access Restricted</h1>
-        <p className="text-sm text-gray-500">You can only view details of meetings you have attended.</p>
+        <p className="text-sm text-gray-500">You can only view details of meetings you created or attended.</p>
       </div>
     );
   }

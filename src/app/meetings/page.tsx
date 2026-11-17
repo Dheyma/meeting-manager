@@ -66,7 +66,9 @@ export default function MeetingsPage() {
         const allowedMeetingIds = new Set(
           attendees.filter((a) => a.person_id === user.personId).map((a) => a.meeting_id)
         );
-        visibleMeetings = visibleMeetings.filter((m) => allowedMeetingIds.has(m.id));
+        visibleMeetings = visibleMeetings.filter(
+          (m) => allowedMeetingIds.has(m.id) || m.created_by === user.personId
+        );
       }
     }
     setMeetings(visibleMeetings);

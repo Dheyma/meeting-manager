@@ -53,13 +53,14 @@ export default function ActionItemsPage() {
   }, []);
 
   async function fetchActionItems() {
-    const [actionsRes, attendeesRes, peopleRes] = await Promise.all([
+    const [actionsRes, attendeesRes, peopleRes, meetingsRes] = await Promise.all([
       supabase
         .from("action_items")
         .select("*, person:people(*), meeting:meetings(id, title, department)")
         .order("due_date", { ascending: true }),
       supabase.from("meeting_attendees").select("meeting_id, person_id"),
       supabase.from("people").select("id, access_all_meetings"),
+      supabase.from("meetings").select("id, created_by"),
     ]);
 
     if (actionsRes.error) {
@@ -78,6 +79,9 @@ export default function ActionItemsPage() {
             .filter((a) => a.person_id === user.personId)
             .map((a) => a.meeting_id)
         );
+        for (const m of (meetingsRes.data || []) as { id: string; created_by: string | null }[]) {
+          if (m.created_by === user.personId) allowedMeetingIds.add(m.id);
+        }
         visibleItems = visibleItems.filter((a) => allowedMeetingIds.has(a.meeting_id));
       }
     }

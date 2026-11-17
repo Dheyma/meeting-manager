@@ -36,7 +36,14 @@ async function getAllowedMeetingIds(): Promise<Set<string> | null> {
     .from("meeting_attendees")
     .select("meeting_id")
     .eq("person_id", user.personId);
-  return new Set((attended || []).map((a) => a.meeting_id));
+  const { data: created } = await supabase
+    .from("meetings")
+    .select("id")
+    .eq("created_by", user.personId);
+  return new Set([
+    ...(attended || []).map((a) => a.meeting_id),
+    ...(created || []).map((m) => m.id),
+  ]);
 }
 
 export default function Home() {
