@@ -116,8 +116,7 @@ export async function buildMinutesDocx({ meeting, attendees, agendaItems, decisi
       .map((d) => p([t("Decision: ", { bold: true }), t(d.description)], { indent: { left: 360 } })),
   ]);
   const generalDecisions = decisions
-    .filter((d) => !d.agenda_item_id || !agenda.some((a) => a.id === d.agenda_item_id))
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    .filter((d) => !d.agenda_item_id || !agenda.some((a) => a.id === d.agenda_item_id));
   const actions = [...actionItems].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const footerRun = (o: Partial<IRunOptions>) => new TextRun({ font: FONT, size: 16, color: GREY, ...o });

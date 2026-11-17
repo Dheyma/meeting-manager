@@ -167,7 +167,12 @@ export default function MeetingDetailPage({
           .select("*")
           .eq("meeting_id", id)
           .order("sort_order"),
-        supabase.from("decisions").select("*").eq("meeting_id", id),
+        supabase
+          .from("decisions")
+          .select("*")
+          .eq("meeting_id", id)
+          .order("sort_order", { nullsFirst: false })
+          .order("created_at"),
         supabase
           .from("action_items")
           .select("*, person:people(*)")
@@ -405,6 +410,7 @@ export default function MeetingDetailPage({
     const { error } = await supabase.from("decisions").insert({
       meeting_id: id,
       description: newDecision,
+      sort_order: decisions.reduce((m, d) => Math.max(m, d.sort_order ?? -1), -1) + 1,
     });
     if (error) {
       toast.error(error.message);
@@ -489,6 +495,23 @@ export default function MeetingDetailPage({
       return;
     }
     await logAction("Reordered action items", "action_item", `meeting: ${meeting?.title}`);
+  }
+
+  async function reorderDecisions(next: Decision[]) {
+    const moved = next.map((d, i) => ({ ...d, sort_order: i }));
+    const changed = moved.filter((d, i) => next[i].sort_order !== i);
+    setDecisions(moved);
+    if (changed.length === 0) return;
+    const results = await Promise.all(
+      changed.map((d) => supabase.from("decisions").update({ sort_order: d.sort_order }).eq("id", d.id))
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      toast.error(`Could not save the new order: ${failed.error.message}`);
+      fetchAll();
+      return;
+    }
+    await logAction("Reordered decisions", "decision", `meeting: ${meeting?.title}`);
   }
 
   async function toggleActionStatus(actionId: string, current: string) {
@@ -1583,12 +1606,14 @@ export default function MeetingDetailPage({
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Decisions</h2>
 
         <div className="space-y-2 mb-4">
-          {decisions.map((decision, index) => (
-            <div
-              key={decision.id}
-              className="p-3 bg-green-50 rounded-lg"
-            >
-              {editingDecisionId === decision.id ? (
+          <SortableList
+            items={decisions}
+            onReorder={reorderDecisions}
+            isLocked={(d) => editingDecisionId === d.id}
+            rowClassName="p-3 bg-green-50 rounded-lg"
+          >
+            {(decision, index, dragHandle) => (
+              editingDecisionId === decision.id ? (
                 <div className="space-y-2">
                   <input
                     type="text"
@@ -1615,6 +1640,7 @@ export default function MeetingDetailPage({
               ) : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
+                    {dragHandle}
                     <span className="text-sm font-medium text-gray-500">{index + 1}.</span>
                     <span className="text-sm text-gray-900">{decision.description}</span>
                   </div>
@@ -1633,9 +1659,9 @@ export default function MeetingDetailPage({
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+              )
+            )}
+          </SortableList>
           {decisions.length === 0 && (
             <p className="text-sm text-gray-500">No decisions recorded yet.</p>
           )}

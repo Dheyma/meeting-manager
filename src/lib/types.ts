@@ -56,6 +56,7 @@ export interface Decision {
   meeting_id: string;
   agenda_item_id?: string;
   description: string;
+  sort_order?: number | null;
   created_at: string;
 }
 
